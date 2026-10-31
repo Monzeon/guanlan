@@ -251,25 +251,95 @@ def calibration(conn: sqlite3.Connection) -> dict:
     }
 
 
-# ── AI 接入（OpenAI 兼容，零依赖）────────────────────
+# ── AI 接入（OpenAI 兼容 + WorkBuddy 云数据面，零依赖）──
+
+# WorkBuddy 云通道默认值：publishableKey 只标识应用、无权限含义，
+# 计费走账号云端额度（云服务规范允许进源码）。GL_AI_* 环境变量可覆盖。
+WB_DEFAULT = {
+    "base_url": "https://atlas-cognition-13448.app.workbuddy.host",
+    "key": "wbpk_5wJMxwVyfLllRVlfD6rHRD_EhydyhsWQWKq0lA9ZBkLx2gcULYEFZyA",
+    "model": "deepseek-v4.1-flash",
+}
+
 
 def ai_config() -> dict:
-    return {
-        "base_url": (os.environ.get("GL_AI_BASE_URL") or "").rstrip("/"),
-        "model": os.environ.get("GL_AI_MODEL") or "",
-        "key": os.environ.get("GL_AI_KEY") or "",
-    }
+    """GL_AI_* 环境变量优先（自备 OpenAI 兼容端点），否则走 WorkBuddy 云。"""
+    env_base = (os.environ.get("GL_AI_BASE_URL") or "").rstrip("/")
+    if env_base and os.environ.get("GL_AI_KEY"):
+        return {"base_url": env_base,
+                "model": os.environ.get("GL_AI_MODEL") or "",
+                "key": os.environ.get("GL_AI_KEY") or "",
+                "style": "openai"}
+    return {**WB_DEFAULT, "style": "wb"}
+
+
+def _read_sse(resp) -> tuple[str, str]:
+    """聚合 WorkBuddy 数据面的 SSE 流（只收流式，本层包装成同步）。"""
+    parts, reasoning = [], []
+    for raw in resp:
+        line = raw.decode("utf-8", "replace").strip()
+        if not line.startswith("data:"):
+            continue
+        data = line[5:].strip()
+        if data == "[DONE]":
+            break
+        try:
+            chunk = json.loads(data)
+        except json.JSONDecodeError:
+            continue
+        if chunk.get("error"):
+            err = chunk["error"]
+            raise RuntimeError(f"流内错误 [{err.get('code') or 'error'}]: {err.get('message','')}")
+        choices = chunk.get("choices") or []
+        if not choices:
+            continue
+        delta = (choices[0] or {}).get("delta") or {}
+        if delta.get("refusal"):
+            raise RuntimeError(f"模型拒绝: {delta['refusal']}")
+        if delta.get("content"):
+            parts.append(delta["content"])
+        if delta.get("reasoning_content"):
+            reasoning.append(delta["reasoning_content"])
+    text = "".join(parts) or "".join(reasoning)
+    if not text.strip():
+        raise RuntimeError("流结束但无内容（max_tokens 过小或上游无响应）")
+    return text.strip(), "".join(reasoning)
 
 
 def ai_chat(messages: list[dict], max_tokens: int = 4000) -> str:
     cfg = ai_config()
-    if not cfg["base_url"] or not cfg["key"]:
-        raise RuntimeError("AI 未配置。设置环境变量 GL_AI_BASE_URL / GL_AI_MODEL / GL_AI_KEY（OpenAI 兼容端点），重启服务。")
+    # 协议要求 messages[0] 是 system（WorkBuddy 数据面强制）
+    if not messages or messages[0].get("role") != "system":
+        messages = [{"role": "system", "content": "You are a helpful assistant."}, *messages]
+
+    if cfg["style"] == "wb":
+        url = cfg["base_url"] + "/.cloud/llm/chat/completions"
+        body = json.dumps({
+            "model": cfg["model"], "messages": messages,
+            "stream": True, "stream_options": {"include_usage": True},
+            "temperature": 0.2, "max_tokens": max_tokens,
+        }).encode("utf-8")
+        req = urllib.request.Request(url, data=body, headers={
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
+            "x-wb-webapp-access-key": cfg["key"],
+        }, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=240) as resp:
+                text, _ = _read_sse(resp)
+            return text
+        except urllib.error.HTTPError as e:
+            raw = e.read().decode("utf-8", "replace")
+            hint = {401: "鉴权失败（publishableKey）",
+                    403: "被拒：key 与端点不匹配或模型不可用",
+                    429: "限流或额度耗尽"}.get(e.code, "")
+            raise RuntimeError(f"AI 调用失败 HTTP {e.code} {hint} {raw[:200]}") from e
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"AI 调用失败：连不上 {url} ({e.reason})") from e
+
     body = json.dumps({
-        "model": cfg["model"] or "gpt-4o-mini",
-        "messages": messages,
-        "temperature": 0.2,
-        "max_tokens": max_tokens,
+        "model": cfg["model"], "messages": messages,
+        "temperature": 0.2, "max_tokens": max_tokens,
     }).encode("utf-8")
     req = urllib.request.Request(
         cfg["base_url"] + "/chat/completions", data=body,
@@ -1065,9 +1135,9 @@ def api_ai_draft_discard(conn, qs, body, id):
 @route_get("/api/ai/status")
 def api_ai_status(conn, qs):
     cfg = ai_config()
+    channel = "WorkBuddy 云 · 账号额度" if cfg["style"] == "wb" else "自备端点"
     return {"ready": bool(cfg["base_url"] and cfg["key"]),
-            "model": cfg["model"] or "(未配置)",
-            "base_url": cfg["base_url"] or "(未配置)"}
+            "model": cfg["model"], "channel": channel}
 
 
 # ── Handler ──────────────────────────────────────────
