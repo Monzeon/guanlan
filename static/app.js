@@ -794,6 +794,15 @@
         } else {
           const r = await post("/api/clips", payload);
           msg.innerHTML = `<span style="color:var(--green)">✓ 已收下${r.fetched && r.fetched.ok ? "（标题已自动抓取）" : ""}</span>`;
+          // 带链接的剪藏：自动抓正文 → AI 简介（后台跑，完成后刷新）
+          if (payload.url && !r.error) {
+            const cid = r.clip && r.clip.id;
+            setTimeout(() => {
+              summarizeClip(cid, document.createElement("div"))
+                .then(() => { if (location.hash.includes("clips")) viewClips(); })
+                .catch(() => {});
+            }, 300);
+          }
         }
         ["cl-url", "cl-title", "cl-tags", "cl-excerpt"].forEach((id) => $("#" + id).value = "");
         setTimeout(viewClips, 500);
@@ -850,7 +859,8 @@
   }
 
   function clipCard(c) {
-    return `<div class="clip-card" data-id="${c.id}">
+    return `<div class="clip-card${c.summary ? " has-summary" : ""}" data-id="${c.id}"
+        data-summary="${esc(c.summary || "")}">
       <div class="cc-title">${c.url
         ? `<a href="${esc(c.url)}" target="_blank" rel="noreferrer">${esc(c.title)}</a>`
         : esc(c.title)}</div>
@@ -858,20 +868,79 @@
       ${(c.tags || []).length ? `<div class="cc-tags">${c.tags.map((t) =>
         `<span class="chip mini">${esc(t)}</span>`).join("")}</div>` : ""}
       ${c.excerpt ? `<div class="cc-excerpt">${esc(c.excerpt)}</div>` : ""}
+      ${c.summary ? `<div class="cc-sum-flag">✦ AI 简介</div>` : ""}
       <div class="cc-foot">
         <span class="mono faint">${esc(c.created_at?.slice(5, 16) || "")}</span>
         ${c.channel ? `<span class="badge">${esc(c.channel)}</span>` : ""}
         <span class="grow"></span>
+        <span class="cc-act" data-summarize="${c.id}" title="生成 / 重新生成 AI 简介">✦</span>
         <span class="cc-act" data-edit="${c.id}">编辑</span>
         <span class="cc-act" data-toentry="${esc(c.title)}" data-ourl="${esc(c.url || "")}">转录入</span>
         <span class="cc-act" data-del="${c.id}">删</span>
       </div></div>`;
   }
 
+  /* 悬浮简介层：全局唯一，hover 卡片时浮现 */
+  let glTip = null;
+  function showTip(anchor, text) {
+    if (!glTip) {
+      glTip = document.createElement("div");
+      glTip.className = "gl-hover-tip";
+      document.body.appendChild(glTip);
+    }
+    glTip.innerHTML = `<div class="ght-label">✦ AI 简介</div>${esc(text)}`;
+    glTip.style.display = "block";
+    const box = anchor.getBoundingClientRect();
+    const tw = 340;
+    let x = Math.min(box.left, window.innerWidth - tw - 16);
+    let y = box.bottom + 8;
+    if (y + 180 > window.innerHeight) y = box.top - 8 - 170;
+    glTip.style.left = x + "px";
+    glTip.style.top = y + "px";
+  }
+  function hideTip() {
+    if (glTip) glTip.style.display = "none";
+  }
+
+  function summarizeClip(id, cardEl) {
+    cardEl.classList.add("summarizing");
+    return post("/api/ai/summarize", { id })
+      .then((r) => {
+        if (r.summary) {
+          cardEl.dataset.summary = r.summary;
+          cardEl.classList.add("has-summary");
+          if (!cardEl.querySelector(".cc-sum-flag")) {
+            const flag = document.createElement("div");
+            flag.className = "cc-sum-flag";
+            flag.textContent = "✦ AI 简介";
+            cardEl.insertBefore(flag, cardEl.querySelector(".cc-foot"));
+          }
+        } else if (r.error) {
+          throw new Error(r.error);
+        }
+      })
+      .finally(() => cardEl.classList.remove("summarizing"));
+  }
+
   function bindClipCards(root) {
     root.querySelectorAll("[data-del]").forEach((el) => el.addEventListener("click", async () => {
       await post("/api/clips/delete", { id: Number(el.dataset.del) });
       viewClips();
+    }));
+    root.querySelectorAll(".clip-card.has-summary").forEach((card) => {
+      card.addEventListener("mouseenter", () => {
+        if (card.dataset.summary) showTip(card, card.dataset.summary);
+      });
+      card.addEventListener("mouseleave", hideTip);
+    });
+    root.querySelectorAll("[data-summarize]").forEach((el) => el.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const card = el.closest(".clip-card");
+      hideTip();
+      summarizeClip(Number(el.dataset.summarize), card).catch((e) => {
+        el.textContent = "✗";
+        el.title = e.message;
+      });
     }));
     root.querySelectorAll("[data-edit]").forEach((el) => el.addEventListener("click", async () => {
       const id = Number(el.dataset.edit);

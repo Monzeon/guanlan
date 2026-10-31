@@ -57,6 +57,10 @@ def db() -> sqlite3.Connection:
 def init_db() -> None:
     conn = db()
     conn.executescript(SCHEMA.read_text(encoding="utf-8"))
+    # 轻量迁移：旧库补新列
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(clips)").fetchall()}
+    if "summary" not in cols:
+        conn.execute("ALTER TABLE clips ADD COLUMN summary TEXT DEFAULT ''")
     conn.commit()
     conn.close()
 
@@ -812,27 +816,60 @@ def _domain_of(url: str) -> str:
     return m.group(1) if m else ""
 
 
-def fetch_url_title(url: str) -> dict:
-    """抓网页 <title>。失败静默——网络不是录入的门槛。"""
-    import html as _html
+def _fetch_html(url: str, limit: int = 500_000) -> str | None:
+    """抓网页原始 HTML。失败返回 None——网络不是录入的门槛。"""
     if not re.match(r"^https?://", url):
-        return {"title": "", "ok": False}
+        return None
     try:
         req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Guanlan clip fetcher)"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            raw = resp.read(200_000)
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            raw = resp.read(limit)
             charset = "utf-8"
             m = re.search(rb'charset=["\']?([\w-]+)', raw[:2000])
             if m:
                 charset = m.group(1).decode("ascii", "replace")
-            text = raw.decode(charset, "replace")
-        m = re.search(r"<title[^>]*>(.*?)</title>", text, re.DOTALL | re.IGNORECASE)
-        if m:
-            return {"title": _html.unescape(m.group(1)).strip()[:200], "ok": True}
+            return raw.decode(charset, "replace")
     except Exception:  # noqa: BLE001
-        pass
-    return {"title": "", "ok": False}
+        return None
+
+
+def extract_main_text(html: str, cap: int = 8000) -> str:
+    """从 HTML 提主正文文本：去脚本/导航/样板，优先 article/main。"""
+    import html as _html
+    h = re.sub(r"<!--.*?-->", " ", html, flags=re.DOTALL)
+    h = re.sub(r"<(script|style|noscript|svg|iframe|form|nav|header|footer|aside)[^>]*>.*?</\1>",
+               " ", h, flags=re.DOTALL | re.IGNORECASE)
+    m = (re.search(r"<article[^>]*>(.*?)</article>", h, re.DOTALL | re.IGNORECASE)
+         or re.search(r"<main[^>]*>(.*?)</main>", h, re.DOTALL | re.IGNORECASE))
+    if m and len(re.sub(r"<[^>]+>", " ", m.group(1))) > 300:
+        h = m.group(1)
+    text = re.sub(r"<[^>]+>", " ", h)
+    text = _html.unescape(text)
+    text = re.sub(r"[ \t\r\f]+", " ", text)
+    text = re.sub(r"\n\s*\n+", "\n", text)
+    return text.strip()[:cap]
+
+
+def fetch_url_content(url: str) -> dict:
+    """抓网页标题 + 主正文（正文供 AI 摘要）。失败静默。"""
+    import html as _html
+    html = _fetch_html(url)
+    if html is None:
+        return {"title": "", "text": "", "ok": False}
+    out = {"title": "", "text": "", "ok": True}
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.DOTALL | re.IGNORECASE)
+    if m:
+        out["title"] = _html.unescape(m.group(1)).strip()[:200]
+    out["text"] = extract_main_text(html)
+    return out
+
+
+def fetch_url_title(url: str) -> dict:
+    """兼容旧调用：只取标题。"""
+    r = fetch_url_content(url)
+    return {"title": r["title"], "ok": r["ok"]}
 
 
 @route_get("/api/clips")
@@ -939,6 +976,46 @@ def api_clip_delete(conn, qs, body):
     conn.execute("DELETE FROM clips WHERE id=?", (cid,))
     conn.commit()
     return {"ok": True}
+
+
+@route_post("/api/ai/summarize")
+def api_ai_summarize(conn, qs, body):
+    """读网页正文（或剪藏摘录）→ AI 生成简短介绍 → 存入 clip.summary。"""
+    clip_id = body.get("id")
+    r = conn.execute("SELECT * FROM clips WHERE id=?", (clip_id,)).fetchone()
+    if not r:
+        return {"error": "剪藏不存在"}
+    clip = clip_row(r)
+
+    content_text = ""
+    if clip["url"]:
+        fetched = fetch_url_content(clip["url"])
+        content_text = fetched["text"]
+        if fetched["title"] and not clip["title"]:
+            conn.execute("UPDATE clips SET title=? WHERE id=?",
+                         (fetched["title"], clip_id))
+            clip["title"] = fetched["title"]
+    if not content_text:
+        content_text = clip["excerpt"] or clip["title"]
+    if len(content_text) < 20:
+        return {"error": "内容太少（网页抓取失败且无摘录），无法总结"}
+
+    try:
+        summary = ai_chat([
+            {"role": "system", "content":
+                "你是信息剪藏的摘要助手。用不超过 3 句中文概括给定内容的核心："
+                "它说了什么（事实或观点）、来源是谁/什么立场（如果看得出）。"
+                "直接陈述，不要'这篇文章介绍了'之类的客套开头。"},
+            {"role": "user", "content": f"标题：{clip['title']}\n\n内容：\n{content_text[:6000]}"},
+        ], max_tokens=400)
+    except RuntimeError as e:
+        return {"error": str(e)}
+    except (urllib.error.URLError, KeyError, json.JSONDecodeError) as e:
+        return {"error": f"AI 调用失败: {e}"}
+
+    conn.execute("UPDATE clips SET summary=? WHERE id=?", (summary, clip_id))
+    conn.commit()
+    return {"ok": True, "id": clip_id, "summary": summary}
 
 
 @route_post("/api/ai/classify")
