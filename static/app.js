@@ -14,10 +14,19 @@
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   const api = async (p, opts) => {
-    const r = await fetch(p, opts);
-    const j = await r.json();
-    if (j && j.error) throw new Error(j.error);
-    return j;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 120000);   // 2 分钟上限
+    try {
+      const r = await fetch(p, { ...opts, signal: ctrl.signal });
+      const j = await r.json();
+      if (j && j.error) throw new Error(j.error);
+      return j;
+    } catch (e) {
+      if (e.name === "AbortError") throw new Error("请求超时（120s）。AI 长任务请稍后重试。");
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
   };
   const post = (p, body) => api(p, {
     method: "POST",
@@ -679,7 +688,13 @@
         <div><div class="claim-st">${esc(x.decision)}</div>
           <div class="claim-meta"><span>${esc(x.date)}</span>
             <span>${esc(x.stakes)}</span><span>${x.reversible ? "可逆" : "不可逆"}</span>
-            ${x.outcome ? `<span>结果：${esc(x.outcome)}</span>` : ""}</div></div>
+            ${x.outcome ? `<span style="color:var(--green)">结果：${esc(x.outcome)}</span>
+              <span>${esc(x.reviewed_at || "")}</span>` : ""}</div>
+          ${!x.outcome ? `<div class="cf-row" style="margin-top:8px">
+              <input type="text" id="rv-${esc(x.code)}" placeholder="事后结果（做了之后发生了什么）"
+                     style="flex:1;min-width:200px">
+              <button class="btn small ghost" data-review="${esc(x.code)}">记录结果</button></div>` : ""}
+        </div>
         <div class="claim-conf"></div></div>`).join("");
 
     main.innerHTML = head("决策日志", `${d.decisions.length} 条 · 决策 → 依赖判断 → 结果 → 归因`)
@@ -712,6 +727,15 @@
         $("#d-msg").innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`;
       }
     });
+    $$("[data-review]").forEach((b) => b.addEventListener("click", async () => {
+      const input = $("#rv-" + b.dataset.review);
+      try {
+        await post(`/api/decisions/${b.dataset.review}/review`, { outcome: input.value });
+        viewDecisions();
+      } catch (e) {
+        input.value = e.message;
+      }
+    }));
   }
 
   /* ── 视图：集藏 ────────────────────────────────────── */

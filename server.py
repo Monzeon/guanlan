@@ -27,7 +27,6 @@ import json
 import os
 import re
 import sqlite3
-import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -729,6 +728,22 @@ def api_prediction_settle(conn, qs, body, code):
     return {"ok": True, "brier": brier, "note": "0.25 = 随机猜测基线，你的均值必须显著低于它"}
 
 
+@route_post("/api/decisions/{code}/review")
+def api_decision_review(conn, qs, body, code):
+    """决策闭环后半段：事后填结果与复盘。"""
+    r = conn.execute("SELECT * FROM decisions WHERE code=?", (code,)).fetchone()
+    if not r:
+        return {"error": f"找不到 {code}"}
+    outcome = str(body.get("outcome") or "").strip()
+    if len(outcome) < 2:
+        return {"error": "结果必填——没有结果的决策日志只是日记"}
+    now = __import__("datetime").datetime.now().strftime("%Y-%m-%d %H:%M")
+    conn.execute("UPDATE decisions SET outcome=?, reviewed_at=? WHERE code=?",
+                 (outcome, now, code))
+    conn.commit()
+    return {"ok": True}
+
+
 @route_get("/api/decisions")
 def api_decisions(conn, qs):
     rows = conn.execute("SELECT * FROM decisions ORDER BY date DESC").fetchall()
@@ -1270,6 +1285,8 @@ class Handler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
 
         length = int(self.headers.get("Content-Length") or 0)
+        if length > 10 * 1024 * 1024:
+            return self._json({"error": "请求体超过 10MB 上限"}, 413)
         try:
             body = json.loads(self.rfile.read(length).decode("utf-8")) if length else {}
         except json.JSONDecodeError:
@@ -1350,7 +1367,13 @@ def main() -> int:
     print("Ctrl+C 停止\n")
 
     try:
-        srv = ThreadingHTTPServer((host, port), Handler)
+        # 显式关掉 SO_REUSEADDR：Windows 下它允许双绑定同一端口，
+        # 两个进程同时 LISTEN、请求随机派发——"改了代码却不生效"的元凶。
+        class Server(ThreadingHTTPServer):
+            allow_reuse_address = False
+            daemon_threads = True
+
+        srv = Server((host, port), Handler)
     except OSError as e:
         if "in use" in str(e).lower() or getattr(e, "errno", None) in (48, 98, 10048):
             print(f"服务已在运行 · {url}")
