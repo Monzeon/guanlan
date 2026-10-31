@@ -37,7 +37,10 @@ def build_lnk() -> bytes:
     icon = str(ICON) + ",0"
     rel = TARGET.name  # 相对工作目录
 
-    flags = 0x01 | 0x04 | 0x08 | 0x20 | 0x80  # LinkInfo|RelativePath|WorkDir|Icon|Unicode
+    # 最小可靠集（对照系统真实 .lnk）：相对路径 + 工作目录 + 图标 + Unicode。
+    # 不带 LinkInfo 段——shell 用 WorkingDir + RelativePath 解析目标，真实系统
+    # 快捷方式（如 dfrgui.lnk）同样不含 LinkInfo。
+    flags = 0x04 | 0x08 | 0x20 | 0x80  # RelativePath | WorkingDir | Icon | Unicode
 
     header = struct.pack(
         "<I16sIIQQQIHHII",
@@ -46,34 +49,15 @@ def build_lnk() -> bytes:
         0, 0, 0,            # creation / access / write times
         0,                  # file size
         0,                  # icon index
-        7,                  # ShowCommand: SW_SHOWMINNOACTIVE
+        1,                  # ShowCommand: SW_SHOWNORMAL
         0, 0,               # hotkey, reserved1
     ) + struct.pack("<II", 0, 0)  # reserved2, reserved3
     assert len(header) == 76, len(header)
 
-    # ── LinkInfo：六字段头 + VolumeID + LocalBasePath + CommonSuffix ──
-    # 头部严格 0x1C = 24 字节（六个 u32），偏移全部相对 LinkInfo 起始
-    local_path = target.encode("mbcs", "replace") + b"\x00"
-    volume = struct.pack("<IIII", 0x11, 3, 0, 0x10) + b"\x00"
-    # VolumeIDSize=0x11(17B：头16B + 空label含null), DriveType=3 FIXED
-
-    vol_off = 0x1C
-    lbp_off = vol_off + len(volume)
-    suffix_off = lbp_off + len(local_path)   # CommonPathSuffix 必须有有效偏移
-    li_body = (struct.pack("<IIIIII",
-                           0x1C,    # LinkInfoHeaderSize
-                           0x01,    # Flags: VolumeIDAndLocalBasePath
-                           vol_off,
-                           lbp_off,
-                           0,       # CommonNetworkRelativeLinkOffset：无
-                           suffix_off)
-               + volume + local_path + b"\x00")
-    link_info = struct.pack("<I", len(li_body) + 4) + li_body
-
     # ── StringData ──
     strings = u16(rel) + u16(workdir) + u16(icon)
 
-    out = header + link_info + strings
+    out = header + strings
     out += struct.pack("<I", 0)
     return out
 
