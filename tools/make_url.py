@@ -1,11 +1,21 @@
-"""生成桌面 .url 快捷方式（纯文本 INI，字节级精确）。"""
+"""重建 观澜.url：先删旧（图标缓存与旧文件绑定），写全新文件。
+IconFile 用正斜杠形式（.url 的 IconFile 接受正斜杠，避开转义歧义）。"""
+import os
+
+DESKTOP = "C:/Users/" + chr(37073) + chr(32768) + chr(38451) + "/Desktop"
+NAME = DESKTOP + "/" + chr(35266) + chr(28572) + ".url"
+
+if os.path.exists(NAME):
+    os.remove(NAME)
+    print("旧 观澜.url 已删除")
+
+ICO = "E:/WORKbuddy/2026-10-31-20-29-37/guanlan/app/guanlan.ico"
 content = (
     "[InternetShortcut]\r\n"
     "URL=file:///E:/WORKbuddy/2026-10-31-20-29-37/guanlan/start.cmd\r\n"
     "IconIndex=0\r\n"
-    "IconFile=E:" + chr(92) + "WORKbuddy" + chr(92) + "2026-10-31-20-29-37"
-    + chr(92) + "guanlan" + chr(92) + "app" + chr(92) + "guanlan.ico\r\n"
+    "IconFile=" + ICO + "\r\n"
 )
-p = "C:/Users/" + chr(37073) + chr(32768) + chr(38451) + "/Desktop/" + chr(35266) + chr(28689) + ".url"
-open(p, "w", newline="").write(content)
-print(repr(open(p, "rb").read()))
+open(NAME, "w", newline="").write(content)
+print("已重建:", NAME, os.path.getsize(NAME), "bytes")
+print(repr(open(NAME, "rb").read()))
