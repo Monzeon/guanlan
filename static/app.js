@@ -59,8 +59,9 @@
   const back = (href, label) =>
     `<div style="margin-bottom:14px"><a href="${href}" class="mono" style="font-size:11.5px">← ${esc(label)}</a></div>`;
 
-  const claimRow = (c) => `
-    <div class="claim-row" data-claim="${esc(c.code)}">
+  const claimRow = (c) => {
+    const conf = c.kind === "claim" && c.confidence != null ? Number(c.confidence) : null;
+    return `<div class="claim-row" data-claim="${esc(c.code)}">
       <div class="claim-id">${esc(c.code)}</div>
       <div>
         <div class="claim-st">${esc(c.kind === "question" ? (c.question || c.statement) : c.statement)}</div>
@@ -72,8 +73,11 @@
           ${(c.entities || []).slice(0, 3).map((e) => `<span>${esc(e)}</span>`).join("")}
         </div>
       </div>
-      <div class="claim-conf">${c.kind === "claim" && c.confidence != null ? Number(c.confidence).toFixed(2) : ""}</div>
+      <div class="claim-conf">${conf != null
+        ? `<span class="conf-mini"><div style="width:${(conf * 100).toFixed(0)}%"></div></span><span>${conf.toFixed(2)}</span>`
+        : ""}</div>
     </div>`;
+  };
 
   function applyStagger(root) {
     root.querySelectorAll(".stat-grid, .panel-body.flush, .form-grid").forEach((box) => {
@@ -425,6 +429,20 @@
     $("#e-asof").value = today;
     $("#e-obs").value = today;
 
+    // 从集藏「转录入」带来的预填
+    const pre = sessionStorage.getItem("gl-prefill");
+    if (pre) {
+      sessionStorage.removeItem("gl-prefill");
+      try {
+        const p = JSON.parse(pre);
+        if (p.statement) $("#e-statement").value = p.statement;
+        if (p.source_url) {
+          const msg0 = $("#e-msg");
+          msg0.innerHTML = `<span class="faint">来源链接：${esc(p.source_url)}</span>`;
+        }
+      } catch (_) { /* 忽略坏预填 */ }
+    }
+
     $("#e-kind").addEventListener("change", (e) => {
       const isQ = e.target.value === "question";
       $("#e-q-wrap").classList.toggle("hide", !isQ);
@@ -696,6 +714,188 @@
     });
   }
 
+  /* ── 视图：集藏 ────────────────────────────────────── */
+  /* 信息从粗到严的三层流：集藏(raw 进料) → 待验证(半结构) → 正典(台账)。
+     标签即分类，folksonomy：不预设体系，标签云自动聚合。 */
+
+  let clipFilter = { tag: "", channel: "" };
+  let editingClip = null;
+
+  async function viewClips() {
+    const [tagData, list] = await Promise.all([
+      api("/api/clips/tags"),
+      api(`/api/clips?${new URLSearchParams(
+        Object.entries(clipFilter).filter(([, v]) => v))}`),
+    ]);
+    const st = await api("/api/ai/status");
+
+    const tagChips = tagData.tags.map((t) => `
+      <span class="chip ${clipFilter.tag === t.tag ? "on" : ""}" data-tag="${esc(t.tag)}">
+        ${esc(t.tag)}<span class="chip-n">${t.n}</span></span>`).join("");
+    const chChips = tagData.channels.map((c) => `
+      <span class="chip ${clipFilter.channel === c ? "on" : ""}" data-channel="${esc(c)}">
+        ${esc(c)}</span>`).join("");
+
+    const knownTags = tagData.tags.map((t) => t.tag);
+
+    main.innerHTML = head("集藏", `${list.clips.length} 条剪藏 · 标签即分类 · 从各渠道收来的都放这里`)
+      + panel("收一条", "贴个链接自动抓标题；或直接记一段话。标签随手打，分类自动长出来。", `
+        <div class="clip-form">
+          <div class="cf-row">
+            <input type="text" id="cl-url" placeholder="粘贴网页链接（可选，自动抓标题）…">
+            <input type="text" id="cl-title" placeholder="标题（留空则自动抓）">
+          </div>
+          <div class="cf-row">
+            <input type="text" id="cl-tags" placeholder="标签，逗号分隔…" list="tag-list">
+            <select id="cl-channel">
+              <option value="">渠道…</option>
+              ${["公众号", "视频", "播客", "书", "文章", "朋友", "新闻", "其他"]
+                .filter((c) => !tagData.channels.includes(c))
+                .concat(tagData.channels)
+                .map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("")}
+            </select>
+            <button class="btn" id="cl-save">收下</button>
+            ${st.ready ? `<button class="btn ghost" id="cl-ai">AI 归类</button>` : ""}
+          </div>
+          <div class="cf-row">
+            <textarea id="cl-excerpt" style="min-height:44px" placeholder="摘录 / 一句话笔记（可选）…"></textarea>
+          </div>
+          <div class="faint" id="cl-msg" style="margin-top:6px"></div>
+        </div>
+        <datalist id="tag-list">${knownTags.map((t) => `<option value="${esc(t)}">`).join("")}</datalist>
+        <div id="edit-zone"></div>`)
+      + `<div class="filters">
+          ${chChips ? `<span class="f-label">渠道</span>${chChips}` : ""}
+          ${tagChips ? `<span class="f-label">标签</span>${tagChips}` : ""}
+          <input type="text" id="cl-search" placeholder="搜剪藏…" style="flex:1;min-width:160px">
+        </div>`
+      + `<div class="panel" id="clip-grid-host"><div class="panel-body">`
+      + (list.clips.length
+        ? `<div class="clip-grid">${list.clips.map((c) => clipCard(c)).join("")}</div>`
+        : empty("还没有剪藏", "从任何渠道看到东西，贴个链接扔进来——分类不用想，标签就是分类"))
+      + `</div></div>`;
+
+    const saveBtn = $("#cl-save");
+    saveBtn.addEventListener("click", async () => {
+      const msg = $("#cl-msg");
+      msg.textContent = "收下中…";
+      try {
+        const payload = {
+          url: $("#cl-url").value.trim(),
+          title: $("#cl-title").value.trim(),
+          tags: $("#cl-tags").value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
+          channel: $("#cl-channel").value,
+          excerpt: $("#cl-excerpt").value.trim(),
+        };
+        if (editingClip) {
+          await post(`/api/clips/${editingClip}`, payload);
+          editingClip = null;
+          msg.innerHTML = `<span style="color:var(--green)">✓ 已更新</span>`;
+        } else {
+          const r = await post("/api/clips", payload);
+          msg.innerHTML = `<span style="color:var(--green)">✓ 已收下${r.fetched && r.fetched.ok ? "（标题已自动抓取）" : ""}</span>`;
+        }
+        ["cl-url", "cl-title", "cl-tags", "cl-excerpt"].forEach((id) => $("#" + id).value = "");
+        setTimeout(viewClips, 500);
+      } catch (e) {
+        msg.innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`;
+      }
+    });
+
+    const aiBtn = $("#cl-ai");
+    if (aiBtn) aiBtn.addEventListener("click", async () => {
+      const msg = $("#cl-msg");
+      msg.textContent = "AI 归类中…";
+      try {
+        const r = await post("/api/ai/classify", {
+          title: $("#cl-title").value || $("#cl-url").value,
+          excerpt: $("#cl-excerpt").value,
+        });
+        if (r.error) throw new Error(r.error);
+        const have = $("#cl-tags").value.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+        const merged = [...new Set([...have, ...(r.tags || [])])];
+        $("#cl-tags").value = merged.join(", ");
+        msg.innerHTML = r.kind === "fact"
+          ? `<span style="color:var(--green)">AI：这像一条<b>可验证事实</b>——${esc(r.reason)} 建议收进正典</span>`
+          : `<span style="color:var(--dim)">AI：这更像<b>观点/资讯</b>——${esc(r.reason)}</span>`;
+      } catch (e) {
+        msg.innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`;
+      }
+    });
+
+    $$("[data-tag]").forEach((el) => el.addEventListener("click", () => {
+      clipFilter.tag = clipFilter.tag === el.dataset.tag ? "" : el.dataset.tag;
+      viewClips();
+    }));
+    $$("[data-channel]").forEach((el) => el.addEventListener("click", () => {
+      clipFilter.channel = clipFilter.channel === el.dataset.channel ? "" : el.dataset.channel;
+      viewClips();
+    }));
+
+    let timer = null;
+    $("#cl-search").addEventListener("input", (e) => {
+      clearTimeout(timer);
+      const term = e.target.value.trim();
+      timer = setTimeout(async () => {
+        if (!term) return viewClips();
+        const r = await api(`/api/clips/search?q=${encodeURIComponent(term)}`);
+        $("#clip-grid-host").innerHTML =
+          `<div class="clip-grid">${r.clips.map(clipCard).join("")}</div>`
+          || empty("无结果", "");
+        bindClipCards($("#clip-grid-host"));
+      }, 250);
+    });
+
+    bindClipCards(main);
+  }
+
+  function clipCard(c) {
+    return `<div class="clip-card" data-id="${c.id}">
+      <div class="cc-title">${c.url
+        ? `<a href="${esc(c.url)}" target="_blank" rel="noreferrer">${esc(c.title)}</a>`
+        : esc(c.title)}</div>
+      ${c.domain ? `<div class="cc-domain">${esc(c.domain)}</div>` : ""}
+      ${(c.tags || []).length ? `<div class="cc-tags">${c.tags.map((t) =>
+        `<span class="chip mini">${esc(t)}</span>`).join("")}</div>` : ""}
+      ${c.excerpt ? `<div class="cc-excerpt">${esc(c.excerpt)}</div>` : ""}
+      <div class="cc-foot">
+        <span class="mono faint">${esc(c.created_at?.slice(5, 16) || "")}</span>
+        ${c.channel ? `<span class="badge">${esc(c.channel)}</span>` : ""}
+        <span class="grow"></span>
+        <span class="cc-act" data-edit="${c.id}">编辑</span>
+        <span class="cc-act" data-toentry="${esc(c.title)}" data-ourl="${esc(c.url || "")}">转录入</span>
+        <span class="cc-act" data-del="${c.id}">删</span>
+      </div></div>`;
+  }
+
+  function bindClipCards(root) {
+    root.querySelectorAll("[data-del]").forEach((el) => el.addEventListener("click", async () => {
+      await post("/api/clips/delete", { id: Number(el.dataset.del) });
+      viewClips();
+    }));
+    root.querySelectorAll("[data-edit]").forEach((el) => el.addEventListener("click", async () => {
+      const id = Number(el.dataset.edit);
+      const d = await api("/api/clips");
+      const c = d.clips.find((x) => x.id === id);
+      if (!c) return;
+      editingClip = id;
+      $("#cl-url").value = c.url || "";
+      $("#cl-title").value = c.title || "";
+      $("#cl-tags").value = (c.tags || []).join(", ");
+      $("#cl-channel").value = c.channel || "";
+      $("#cl-excerpt").value = c.excerpt || "";
+      $("#cl-save").textContent = "保存修改";
+      window.scrollTo(0, 0);
+    }));
+    root.querySelectorAll("[data-toentry]").forEach((el) => el.addEventListener("click", () => {
+      sessionStorage.setItem("gl-prefill", JSON.stringify({
+        statement: el.dataset.toentry,
+        source_url: el.dataset.ourl,
+      }));
+      location.hash = "#/entry";
+    }));
+  }
+
   /* ── 视图：AI ──────────────────────────────────────── */
 
   let aiTab = "ingest";
@@ -890,6 +1090,7 @@
   async function refreshSidebar() {
     try {
       const o = await api("/api/overview");
+      $("#c-clips").textContent = o.stats.clips;
       $("#c-canon").textContent = o.stats.active;
       $("#c-pred").textContent = o.stats.predictions_open;
       const bad = o.stats.conflicts;
@@ -904,6 +1105,7 @@
 
   const ROUTES = {
     overview: viewOverview,
+    clips: viewClips,
     canon: (a) => a ? viewClaim(a) : viewCanon(),
     series: (a) => a ? viewSeriesDetail(a) : viewSeries(),
     conflicts: viewConflicts,

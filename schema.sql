@@ -179,9 +179,42 @@ CREATE TABLE IF NOT EXISTS events (
     created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+-- ── 集藏层：轻量信息剪藏（标签即分类， folksonomy）──
+-- 集藏（raw 进料）→ 待验证（半结构）→ 正典（严谨台账）
+CREATE TABLE IF NOT EXISTS clips (
+    id          INTEGER PRIMARY KEY,
+    title       TEXT NOT NULL,
+    url         TEXT DEFAULT '',
+    channel     TEXT DEFAULT '',               -- 渠道：公众号/视频/播客/书/文章/朋友/… 自由文本
+    tags        TEXT NOT NULL DEFAULT '[]',    -- JSON 数组，自由标签
+    excerpt     TEXT DEFAULT '',               -- 摘录 / 笔记
+    created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS clips_fts USING fts5(
+    title, excerpt, tags,
+    content='clips', content_rowid='id',
+    tokenize='trigram'
+);
+CREATE TRIGGER IF NOT EXISTS clips_ai AFTER INSERT ON clips BEGIN
+    INSERT INTO clips_fts(rowid, title, excerpt, tags)
+    VALUES (new.id, new.title, new.excerpt, new.tags);
+END;
+CREATE TRIGGER IF NOT EXISTS clips_ad AFTER DELETE ON clips BEGIN
+    INSERT INTO clips_fts(clips_fts, rowid, title, excerpt, tags)
+    VALUES ('delete', old.id, old.title, old.excerpt, old.tags);
+END;
+CREATE TRIGGER IF NOT EXISTS clips_au AFTER UPDATE ON clips BEGIN
+    INSERT INTO clips_fts(clips_fts, rowid, title, excerpt, tags)
+    VALUES ('delete', old.id, old.title, old.excerpt, old.tags);
+    INSERT INTO clips_fts(rowid, title, excerpt, tags)
+    VALUES (new.id, new.title, new.excerpt, new.tags);
+END;
+
 -- ── 索引 ─────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_claims_domain  ON claims(domain, status);
 CREATE INDEX IF NOT EXISTS idx_claims_tier    ON claims(tier);
 CREATE INDEX IF NOT EXISTS idx_obs_code       ON observations(code, period);
 CREATE INDEX IF NOT EXISTS idx_pred_status    ON predictions(status, resolve_by);
 CREATE INDEX IF NOT EXISTS idx_sources_tier   ON sources(tier);
+CREATE INDEX IF NOT EXISTS idx_clips_channel  ON clips(channel);

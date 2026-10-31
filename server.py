@@ -363,6 +363,7 @@ def route_post(path):
 @route_get("/api/overview")
 def api_overview(conn, qs):
     stats = {
+        "clips": conn.execute("SELECT COUNT(*) n FROM clips").fetchone()["n"],
         "claims": conn.execute("SELECT COUNT(*) n FROM claims WHERE kind='claim'").fetchone()["n"],
         "questions": conn.execute("SELECT COUNT(*) n FROM claims WHERE kind='question'").fetchone()["n"],
         "t0": conn.execute("SELECT COUNT(*) n FROM claims WHERE tier='T0' AND kind='claim'").fetchone()["n"],
@@ -725,6 +726,180 @@ def api_source_create(conn, qs, body):
 def api_events(conn, qs):
     rows = conn.execute("SELECT * FROM events ORDER BY when_at DESC LIMIT 100").fetchall()
     return {"events": [dict(r) for r in rows]}
+
+
+# ── 集藏：轻量信息剪藏 ───────────────────────────────
+
+def clip_row(r: sqlite3.Row) -> dict:
+    d = dict(r)
+    d["tags"] = json.loads(d["tags"] or "[]")
+    d["domain"] = _domain_of(d["url"])
+    return d
+
+
+def _domain_of(url: str) -> str:
+    m = re.match(r"https?://([^/]+)", url or "")
+    return m.group(1) if m else ""
+
+
+def fetch_url_title(url: str) -> dict:
+    """抓网页 <title>。失败静默——网络不是录入的门槛。"""
+    import html as _html
+    if not re.match(r"^https?://", url):
+        return {"title": "", "ok": False}
+    try:
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (Guanlan clip fetcher)"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            raw = resp.read(200_000)
+            charset = "utf-8"
+            m = re.search(rb'charset=["\']?([\w-]+)', raw[:2000])
+            if m:
+                charset = m.group(1).decode("ascii", "replace")
+            text = raw.decode(charset, "replace")
+        m = re.search(r"<title[^>]*>(.*?)</title>", text, re.DOTALL | re.IGNORECASE)
+        if m:
+            return {"title": _html.unescape(m.group(1)).strip()[:200], "ok": True}
+    except Exception:  # noqa: BLE001
+        pass
+    return {"title": "", "ok": False}
+
+
+@route_get("/api/clips")
+def api_clips(conn, qs):
+    tag = (qs.get("tag") or [None])[0]
+    channel = (qs.get("channel") or [None])[0]
+    q = "SELECT * FROM clips WHERE 1=1"
+    args = []
+    if tag:
+        q += " AND tags LIKE ?"
+        args.append(f'%"{tag}"%')
+    if channel:
+        q += " AND channel=?"
+        args.append(channel)
+    q += " ORDER BY id DESC LIMIT 200"
+    rows = conn.execute(q, args).fetchall()
+    return {"clips": [clip_row(r) for r in rows]}
+
+
+@route_get("/api/clips/tags")
+def api_clip_tags(conn, qs):
+    """标签频次表——标签即分类，频次即权重。"""
+    rows = conn.execute("SELECT tags FROM clips").fetchall()
+    freq = {}
+    for r in rows:
+        for t in json.loads(r["tags"] or "[]"):
+            freq[t] = freq.get(t, 0) + 1
+    tags = sorted(freq.items(), key=lambda kv: -kv[1])
+    channels = [r["channel"] for r in conn.execute(
+        "SELECT DISTINCT channel, COUNT(*) n FROM clips GROUP BY channel ORDER BY n DESC")]
+    return {"tags": [{"tag": t, "n": n} for t, n in tags],
+            "channels": [c for c in channels if c]}
+
+
+@route_post("/api/clips")
+def api_clip_create(conn, qs, body):
+    title = str(body.get("title") or "").strip()
+    url = str(body.get("url") or "").strip()
+    if not title and not url:
+        return {"error": "标题和链接至少给一个"}
+    fetched = {"ok": False}
+    if url and not title:
+        fetched = fetch_url_title(url)
+        title = fetched.get("title") or _domain_of(url) or "未命名剪藏"
+    tags = [str(t).strip() for t in (body.get("tags") or []) if str(t).strip()]
+    conn.execute(
+        "INSERT INTO clips (title,url,channel,tags,excerpt) VALUES (?,?,?,?,?)",
+        (title, url, str(body.get("channel") or "").strip(),
+         json.dumps(tags, ensure_ascii=False),
+         str(body.get("excerpt") or "").strip()))
+    conn.commit()
+    row = conn.execute("SELECT * FROM clips WHERE id=last_insert_rowid()").fetchone()
+    return {"ok": True, "clip": clip_row(row), "fetched": fetched}
+
+
+@route_post("/api/clips/{cid}")
+def api_clip_update(conn, qs, body, cid):
+    r = conn.execute("SELECT * FROM clips WHERE id=?", (cid,)).fetchone()
+    if not r:
+        return {"error": "剪藏不存在"}
+    sets, args = [], []
+    for k in ("title", "url", "channel", "excerpt"):
+        if k in body:
+            sets.append(f"{k}=?")
+            args.append(str(body[k] or "").strip())
+    if "tags" in body:
+        sets.append("tags=?")
+        args.append(json.dumps([str(t).strip() for t in body["tags"] if str(t).strip()],
+                               ensure_ascii=False))
+    if not sets:
+        return {"error": "无可更新字段"}
+    args.append(cid)
+    conn.execute(f"UPDATE clips SET {', '.join(sets)} WHERE id=?", args)
+    conn.commit()
+    return {"ok": True}
+
+
+@route_get("/api/clips/search")
+def api_clip_search(conn, qs):
+    term = (qs.get("q") or [""])[0].strip()
+    if not term:
+        return {"clips": []}
+    if len(term) < 3:
+        rows = conn.execute(
+            "SELECT * FROM clips WHERE title LIKE ? OR excerpt LIKE ? OR tags LIKE ? LIMIT 60",
+            (f"%{term}%",) * 3).fetchall()
+    else:
+        safe = term.replace('"', '""')
+        try:
+            rows = conn.execute(
+                """SELECT c.* FROM clips_fts f JOIN clips c ON c.id=f.rowid
+                   WHERE clips_fts MATCH ? ORDER BY rank LIMIT 60""",
+                (f'"{safe}"',)).fetchall()
+        except sqlite3.OperationalError:
+            rows = conn.execute(
+                "SELECT * FROM clips WHERE title LIKE ? OR excerpt LIKE ? LIMIT 60",
+                (f"%{term}%", f"%{term}%")).fetchall()
+    return {"clips": [clip_row(r) for r in rows]}
+
+
+@route_post("/api/clips/delete")
+def api_clip_delete(conn, qs, body):
+    cid = body.get("id")
+    conn.execute("DELETE FROM clips WHERE id=?", (cid,))
+    conn.commit()
+    return {"ok": True}
+
+
+@route_post("/api/ai/classify")
+def api_ai_classify(conn, qs, body):
+    """AI 辅助归类：给剪藏建议标签 + 是否值得升格为命题。"""
+    title = str(body.get("title") or "")
+    excerpt = str(body.get("excerpt") or "")
+    if not (title or excerpt):
+        return {"error": "内容为空"}
+    freq = {}
+    for r in conn.execute("SELECT tags FROM clips").fetchall():
+        for t in json.loads(r["tags"] or "[]"):
+            freq[t] = freq.get(t, 0) + 1
+    top_tags = [t for t, _ in sorted(freq.items(), key=lambda kv: -kv[1])[:30]]
+    try:
+        raw = ai_chat([
+            {"role": "system", "content":
+                "你是信息归档助手。为给定的信息剪藏建议 2-4 个中文标签（优先从已有标签池选，"
+                "没有合适的可新造），并判断：这是一条可验证的事实陈述，还是仅仅是值得记录的观点/资讯？"
+                "输出 JSON：{\"tags\": [\"..\"], \"kind\": \"fact|opinion\", \"reason\": \"一句话\"}。只输出 JSON。"},
+            {"role": "user", "content":
+                f"已有标签池：{top_tags}\n\n标题：{title}\n摘录：{excerpt[:2000]}"},
+        ], max_tokens=500)
+        m = re.search(r"\{.*\}", raw, re.DOTALL)
+        data = json.loads(m.group(0)) if m else {}
+        return {"ok": True, "tags": data.get("tags") or [],
+                "kind": data.get("kind") or "", "reason": data.get("reason") or ""}
+    except RuntimeError as e:
+        return {"error": str(e)}
+    except (urllib.error.URLError, json.JSONDecodeError) as e:
+        return {"error": f"AI 调用失败: {e}"}
 
 
 # ── AI 路由 ──────────────────────────────────────────
