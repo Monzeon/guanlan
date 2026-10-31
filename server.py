@@ -1032,6 +1032,8 @@ def main() -> int:
     except OSError as e:
         if "in use" in str(e).lower() or getattr(e, "errno", None) in (48, 98, 10048):
             print(f"服务已在运行 · {url}")
+            import webbrowser
+            webbrowser.open(url)   # 双击图标场景：服务在跑就直接开界面
             return 0
         raise
     try:
