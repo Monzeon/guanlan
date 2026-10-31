@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>观澜 · 个人认知平台</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e1a2e'/%3E%3Cpath d='M4 20c3-6 6-6 9 0s6 6 9 0 6-6 6 0' stroke='%23c9973b' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='9' r='2.6' fill='%23efcb84'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 34 34" aria-hidden="true">
+          <rect width="34" height="34" rx="7.5" fill="#0e1a2e"/>
+          <path d="M5 21c3.2-6.4 6.4-6.4 9.6 0s6.4 6.4 9.6 0 4.8-4.8 4.8 0" stroke="#c9973b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+          <circle cx="24.5" cy="9" r="2.8" fill="#efcb84"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">观澜</div>
+        <div class="brand-sub">GUANLAN · 认知仪表盘</div>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <div class="nav-group">面板</div>
+      <div class="nav-item" data-route="overview"><span>总览</span></div>
+
+      <div class="nav-group">知识</div>
+      <div class="nav-item" data-route="canon">
+        <span>正典</span><span class="count" id="c-canon">—</span></div>
+      <div class="nav-item" data-route="conflicts">
+        <span>矛盾</span><span class="count" id="c-conf">—</span></div>
+
+      <div class="nav-group">数据</div>
+      <div class="nav-item" data-route="series"><span>时序</span></div>
+      <div class="nav-item" data-route="library"><span>口径 · 基准 · 来源</span></div>
+      <div class="nav-item" data-route="entry"><span>录入</span></div>
+
+      <div class="nav-group">判断</div>
+      <div class="nav-item" data-route="predictions">
+        <span>预测</span><span class="count" id="c-pred">—</span></div>
+      <div class="nav-item" data-route="decisions"><span>决策</span></div>
+
+      <div class="nav-group">智能</div>
+      <div class="nav-item" data-route="ai"><span>AI 三职能</span></div>
+    </nav>
+
+    <div class="side-foot">
+      <div><span class="k">AI</span> <span class="v" id="f-ai">检测中</span></div>
+      <div><span class="k">库</span> <span class="v" id="f-db">—</span></div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="loading">载入中…</div>
+  </main>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
