@@ -1,2 +1,46 @@
 data/
 app/guanlan.preview.png
+__pycache__/
+*.py[cod]
+
+# Android 本地构建链和签名私钥，不进版本库
+.android-sdk/
+.tools/
+android/.build/
+android/.signing/
+android-local/.toolchain/
+android-local/.gradle/
+android-local/build/
+android-local/app/build/
+android-local/local.properties
+android-local/app/src/main/python/bootstrap/
+
+# 技术评审：签名材料、真实样本、构建产物与临时备份不进版本库
+*.jks
+*.keystore
+keystore.pass
+android/dist/
+android-local/dist/
+android-local/app/src/main/python/bootstrap/data/
+backup/
+backups/
+docs/ui-*/
+.playwright-cli/
+_rf*.py
+
+# 本地构建产物、打包目录与数据库备份，不进版本库
+dist/
+build/
+data.bak-moved-*/
+*.bak
+*.bak-*
+.pytest_cache/
+node_modules/
+
+# 本地审计日志、验收截图与一次性补丁，不进开源仓库
+docs/audit-*
+docs/shots-*
+docs/*.log
+docs/*.patch
+docs/*.verify.*
+docs/存储迁移-*.md

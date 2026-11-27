@@ -124,6 +124,10 @@ body.rc-active .main { padding: 0; max-width: none; }
 
 /* ── 资料卡片 ───────────────────────────────────────── */
 .rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 14px; }
+/* 书架只有一两本时，不要留一整列空白 */
+.rc-grid-1 { grid-template-columns: minmax(268px, 420px); }
+.rc-grid-2 { grid-template-columns: repeat(2, minmax(268px, 1fr)); max-width: 860px; }
+.rc-grid-3 { grid-template-columns: repeat(3, minmax(268px, 1fr)); max-width: 1120px; }
 .rc-card {
   position: relative; display: flex; flex-direction: column;
   background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
@@ -364,7 +368,7 @@ body.rc-active .main { padding: 0; max-width: none; }
 
 /* 纸面：三种纸张 + 可调字号/行距/宽度 */
 .rc-paper {
-  width: min(100%, calc(var(--rc-w) + 92px)); margin: 0 auto;
+  width: min(100%, calc(var(--rc-w) + 92px), 812px); margin: 0 auto;
   padding: 30px 46px 90px; background: var(--panel);
   border-left: 1px solid var(--line); border-right: 1px solid var(--line);
   min-height: 100%; transition: background var(--t-med);
@@ -416,6 +420,11 @@ body.rc-active .main { padding: 0; max-width: none; }
 .rc-sw.ann-rose { background: var(--ann-rose-bg); }
 .rc-sw.ann-violet { background: var(--ann-violet-bg); }
 .rc-sel-sep { width: 1px; height: 17px; background: var(--line); margin: 0 3px; }
+/* 取消划重点：警示色，但保持工具条的轻量感 */
+.rc-selbar button.rc-sel-unmark { color: #b3493f; font-weight: 600; }
+.rc-selbar button.rc-sel-unmark:hover { background: rgba(179, 73, 63, .12); color: #b3493f; }
+.rc-ann-acts button.rc-ann-del { color: #b3493f; }
+.rc-ann-acts button.rc-ann-del:hover { color: #b3493f; text-decoration: underline; }
 
 /* 音视频 */
 .rc-media-box { max-width: 820px; margin: 18px auto 0; padding: 0 18px; }
@@ -554,6 +563,7 @@ body.rc-active .main { padding: 0; max-width: none; }
   .rc-rhead-prog { display: none; }
   .rc-rhead-title strong { max-width: 40vw; }
   .rc-two { grid-template-columns: 1fr; }
+  .rc-grid-1, .rc-grid-2, .rc-grid-3 { grid-template-columns: minmax(0, 1fr); max-width: none; }
 }
 @media (max-width: 720px) {
   .m-item { font-size: 9px; padding: 0 1px; }

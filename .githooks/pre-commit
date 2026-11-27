@@ -1,0 +1,30 @@
+#!/bin/sh
+# 提交前跑一遍回归集。装一次：.githooks/install.cmd
+# 真需要绕过（比如只改了个错别字、机器上没 Python 环境）：
+#   GL_SKIP_TESTS=1 git commit ...
+if [ "$GL_SKIP_TESTS" = "1" ]; then
+    echo "[guanlan] GL_SKIP_TESTS=1，跳过回归集"
+    exit 0
+fi
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$repo_root" || exit 0
+
+if command -v python >/dev/null 2>&1; then
+    PY=python
+elif command -v python3 >/dev/null 2>&1; then
+    PY=python3
+else
+    echo "[guanlan] 没找到 python，跳过回归集（装了 Python 门禁才生效）"
+    exit 0
+fi
+
+log=$(mktemp 2>/dev/null || echo "/tmp/guanlan-tests.log")
+PYTHONIOENCODING=utf-8 PYTHONUTF8=1 "$PY" -m unittest discover -s tests >"$log" 2>&1
+if [ $? -ne 0 ]; then
+    echo "[guanlan] 回归集失败，提交已阻止："
+    tail -40 "$log"
+    echo "确认与自己这次改动无关时：GL_SKIP_TESTS=1 git commit ..."
+    exit 1
+fi
+echo "[guanlan] 回归集全绿（$(grep -c '^' "$log") 行输出，详见 docs/回归门禁.md）"

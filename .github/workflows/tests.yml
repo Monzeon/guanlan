@@ -1,0 +1,28 @@
+name: tests
+
+# 仓库目前还没有远到 GitHub，这个工作流是给「以后推到远端」准备的；
+# 现在每次提交的实际门禁是 .githooks/pre-commit（见 docs/回归门禁.md）。
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unittest:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python: ["3.11", "3.13"]
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 跑回归集
+        run: python -m unittest discover -s tests -v

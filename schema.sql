@@ -182,13 +182,86 @@ CREATE TABLE IF NOT EXISTS events (
 -- ── 集藏层：轻量信息剪藏（标签即分类， folksonomy）──
 -- 集藏（raw 进料）→ 待验证（半结构）→ 正典（严谨台账）
 CREATE TABLE IF NOT EXISTS clips (
-    id          INTEGER PRIMARY KEY,
-    title       TEXT NOT NULL,
-    url         TEXT DEFAULT '',
-    channel     TEXT DEFAULT '',               -- 渠道：公众号/视频/播客/书/文章/朋友/… 自由文本
-    tags        TEXT NOT NULL DEFAULT '[]',    -- JSON 数组，自由标签
-    excerpt     TEXT DEFAULT '',               -- 摘录 / 笔记
-    created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    id           INTEGER PRIMARY KEY,
+    title        TEXT NOT NULL,
+    url          TEXT DEFAULT '',
+    channel      TEXT DEFAULT '',               -- 渠道：公众号/视频/播客/书/文章/朋友/… 自由文本
+    board_id     INTEGER,                       -- 板块（库的抽屉），NULL = 未分类
+    tier         TEXT DEFAULT '',               -- 信源分级 T0–T4，'' = 未分级
+    grade        TEXT NOT NULL DEFAULT '',      -- 材料级：canon 权威 / ref 参考 / daily 资讯 / '' 未定
+    grade_hint   TEXT DEFAULT '',               -- AI 建议的材料级，只作建议，不写进 grade
+    grade_hint_reason TEXT DEFAULT '',          -- 建议的理由，一句话
+    tags         TEXT NOT NULL DEFAULT '[]',    -- JSON 数组，自由标签
+    excerpt      TEXT DEFAULT '',               -- 摘录 / 笔记
+    summary      TEXT DEFAULT '',               -- 可编辑的 AI 摘要
+    content_text TEXT DEFAULT '',               -- 已解析正文，仅供本机检索与按需 AI 加工
+    body_images  TEXT DEFAULT '',               -- 正文配图 JSON：[{f,n,c,at,w,h}]，at=插在第几段之后
+    fetch_status TEXT NOT NULL DEFAULT 'idle',  -- idle | ok | failed | stored | unparsed
+    fetch_error  TEXT DEFAULT '',
+    archived     INTEGER NOT NULL DEFAULT 0,
+    content_hash TEXT DEFAULT '',               -- URL 规范化或文件内容去重
+    source_type  TEXT NOT NULL DEFAULT 'web',   -- web | text | file
+    file_name    TEXT DEFAULT '',
+    file_path    TEXT DEFAULT '',               -- 仅存 data/uploads 内的随机文件名
+    mime_type    TEXT DEFAULT '',
+    file_size    INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    viewed_at    TEXT DEFAULT '',               -- 最近一次打开的时间，用来算“该重看”
+    updated_at   TEXT DEFAULT ''
+);
+
+-- 我的判断：一条材料对应一句结论，轻量版正典
+CREATE TABLE IF NOT EXISTS verdicts (
+    clip_id    INTEGER PRIMARY KEY,
+    text       TEXT NOT NULL DEFAULT '',
+    confidence TEXT NOT NULL DEFAULT 'mid',     -- low | mid | high
+    refs       TEXT NOT NULL DEFAULT '[]',      -- [{"id": 12, "kind": "counter"}]
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT ''
+);
+
+-- 保存下来的检索
+CREATE TABLE IF NOT EXISTS saved_searches (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    q          TEXT NOT NULL DEFAULT '',
+    filter     TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+-- 随手记：每条收存下面自己写的东西，可以带图
+CREATE TABLE IF NOT EXISTS clip_notes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    clip_id    INTEGER NOT NULL,
+    text       TEXT NOT NULL DEFAULT '',
+    images     TEXT NOT NULL DEFAULT '[]',      -- JSON 数组，值只存 data/notes 里的随机文件名
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT ''
+);
+
+-- 主收存图：一条收存可以直接带多张图，和随手记附件分开记，卡片上直接显示。
+CREATE TABLE IF NOT EXISTS clip_images (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    clip_id    INTEGER NOT NULL,
+    file       TEXT NOT NULL,                   -- data/notes 内的随机文件名
+    name       TEXT DEFAULT '',                 -- 上传时的原始文件名
+    size       INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    UNIQUE(clip_id, file)
+);
+
+-- 正文批注：落在已抓正文的字符区间上，quote 与前后文用于正文重抓后的重新锚定。
+CREATE TABLE IF NOT EXISTS clip_annotations (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    clip_id      INTEGER NOT NULL REFERENCES clips(id) ON DELETE CASCADE,
+    start_offset INTEGER NOT NULL DEFAULT 0,
+    end_offset   INTEGER NOT NULL DEFAULT 0,
+    quote        TEXT NOT NULL DEFAULT '',
+    note         TEXT NOT NULL DEFAULT '',
+    color        TEXT NOT NULL DEFAULT 'amber',  -- amber | sage | blue | rose
+    prefix       TEXT NOT NULL DEFAULT '',
+    suffix       TEXT NOT NULL DEFAULT '',
+    created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    updated_at   TEXT DEFAULT ''
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS clips_fts USING fts5(
@@ -211,6 +284,36 @@ CREATE TRIGGER IF NOT EXISTS clips_au AFTER UPDATE ON clips BEGIN
     VALUES (new.id, new.title, new.excerpt, new.tags);
 END;
 
+-- AI 研究记录：摘要以外的分析、对比、问答均持久化，可继续编辑。
+CREATE TABLE IF NOT EXISTS ai_outputs (
+    id          INTEGER PRIMARY KEY,
+    clip_id     INTEGER REFERENCES clips(id) ON DELETE CASCADE,
+    kind        TEXT NOT NULL,                  -- analyze | compare | ask | devil
+    title       TEXT NOT NULL,
+    content     TEXT NOT NULL DEFAULT '{}',     -- JSON，结构化结果或可编辑回答
+    source_ids  TEXT NOT NULL DEFAULT '[]',     -- 关联的 clip id 或 claim code
+    model       TEXT DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+-- 编号序列：写入计数器时串行化，避免多线程同时生成相同 code。
+CREATE TABLE IF NOT EXISTS code_counters (
+    prefix TEXT NOT NULL,
+    year   INTEGER NOT NULL,
+    seq    INTEGER NOT NULL,
+    PRIMARY KEY (prefix, year)
+);
+
+-- ── 板块：库的抽屉。一条剪藏最多属于一个板块，标签仍是细分类 ──
+CREATE TABLE IF NOT EXISTS boards (
+    id         INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL UNIQUE,
+    kind       TEXT NOT NULL DEFAULT '',        -- '' 普通板块 | 'archive' 资料库（原件与权威原文）
+    sort       INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 -- ── 索引 ─────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_claims_domain  ON claims(domain, status);
 CREATE INDEX IF NOT EXISTS idx_claims_tier    ON claims(tier);
@@ -218,3 +321,14 @@ CREATE INDEX IF NOT EXISTS idx_obs_code       ON observations(code, period);
 CREATE INDEX IF NOT EXISTS idx_pred_status    ON predictions(status, resolve_by);
 CREATE INDEX IF NOT EXISTS idx_sources_tier   ON sources(tier);
 CREATE INDEX IF NOT EXISTS idx_clips_channel  ON clips(channel);
+CREATE INDEX IF NOT EXISTS idx_clips_archived ON clips(archived, id);
+CREATE INDEX IF NOT EXISTS idx_clips_url      ON clips(url);
+CREATE INDEX IF NOT EXISTS idx_clips_hash     ON clips(content_hash);
+CREATE INDEX IF NOT EXISTS idx_clips_board    ON clips(board_id, id);
+CREATE INDEX IF NOT EXISTS idx_clips_tier     ON clips(tier);
+CREATE INDEX IF NOT EXISTS idx_clips_grade    ON clips(grade, id);
+CREATE INDEX IF NOT EXISTS idx_ai_outputs_clip ON ai_outputs(clip_id, id);
+CREATE INDEX IF NOT EXISTS idx_clip_notes      ON clip_notes(clip_id, id);
+CREATE INDEX IF NOT EXISTS idx_clip_images     ON clip_images(clip_id, id);
+CREATE INDEX IF NOT EXISTS idx_clip_annotations ON clip_annotations(clip_id, start_offset, id);
+CREATE INDEX IF NOT EXISTS idx_clips_viewed      ON clips(viewed_at);

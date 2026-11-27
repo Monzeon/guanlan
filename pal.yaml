@@ -1,0 +1,338 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e10]:
+        - generic [ref=e11]: 观澜
+        - generic [ref=e12]: 观水有术，必观其澜 ——《孟子》
+      - navigation [ref=e13]:
+        - generic [ref=e14] [cursor=pointer]:
+          - generic [ref=e15]: 全部
+          - generic [ref=e16]: "8"
+        - generic [ref=e17]:
+          - generic [ref=e18]: 资料库
+          - generic [ref=e19] [cursor=pointer]: ▣原始资料
+          - generic [ref=e21]: 板块
+          - generic [ref=e22] [cursor=pointer]:
+            - generic [ref=e23]: 政治
+            - generic [ref=e24]: "2"
+          - generic [ref=e25] [cursor=pointer]:
+            - generic [ref=e26]: 经济
+            - generic [ref=e27]: "4"
+          - generic [ref=e28] [cursor=pointer]:
+            - generic [ref=e29]: 文化
+            - generic [ref=e30]: "1"
+          - generic [ref=e31] [cursor=pointer]: 社会
+          - generic [ref=e33] [cursor=pointer]:
+            - generic [ref=e34]: 未分类
+            - generic [ref=e35]: "1"
+        - generic [ref=e36] [cursor=pointer]: ＋ 新建板块
+        - generic [ref=e38]: 工具
+        - generic [ref=e39] [cursor=pointer]: 问
+        - generic [ref=e41] [cursor=pointer]: 洞察
+        - generic [ref=e43] [cursor=pointer]: 检索
+        - generic [ref=e45] [cursor=pointer]: 判断
+        - generic [ref=e47] [cursor=pointer]: 回顾
+        - generic [ref=e49] [cursor=pointer]: 设置
+      - generic [ref=e51]:
+        - generic [ref=e52]: AI deepseek-v4.1-flash
+        - generic [ref=e53]: 库 8 条
+        - generic [ref=e54]:
+          - button "Ctrl K 快速跳转" [ref=e55] [cursor=pointer]:
+            - generic [ref=e56]: Ctrl
+            - generic [ref=e57]: K
+            - generic [ref=e58]: 快速跳转
+          - button "深色" [ref=e59] [cursor=pointer]
+    - main [ref=e60]:
+      - generic [ref=e61]:
+        - heading "全部收存" [level=1] [ref=e62]
+        - generic [ref=e63]: 8 条 · 存下来的东西，AI 只读这里
+      - generic [ref=e64]:
+        - generic "这一层回答的是「它属于库里的哪一层」，和右边那个 T0–T4 信源分级是两回事" [ref=e65]: 材料级
+        - generic [ref=e66]:
+          - generic "所有收存" [ref=e67] [cursor=pointer]:
+            - text: 全部
+            - generic [ref=e68]: "8"
+          - generic "1 条权威 · 3 条参考：能当依据的" [ref=e69] [cursor=pointer]:
+            - text: 材料
+            - generic [ref=e70]: "4"
+          - generic "每日新闻、快讯：只作时效背景" [ref=e71] [cursor=pointer]:
+            - text: 资讯
+            - generic [ref=e72]: "2"
+          - generic "还没判的：AI 仍会引用，只是标明未定" [ref=e73] [cursor=pointer]:
+            - text: 未定
+            - generic [ref=e74]: "2"
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]: 该重看
+          - generic [ref=e78]: 翻出来的旧东西，不是新推荐
+          - generic [ref=e79] [cursor=pointer]: 换一批
+          - generic [ref=e80] [cursor=pointer]: 收起
+        - link "America is doing better than you think. Your algorithm is just hiding it. 经济 · 今天收的" [ref=e81] [cursor=pointer]:
+          - /url: "#/c/8"
+          - generic [ref=e82]: America is doing better than you think. Your algorithm is just hiding it.
+          - generic [ref=e83]: 经济 · 今天收的
+        - link "中国经济走弱正催生“失落的一代” - WSJ 经济 · 收进来 1 天" [ref=e84] [cursor=pointer]:
+          - /url: "#/c/3"
+          - generic [ref=e85]: 中国经济走弱正催生“失落的一代” - WSJ
+          - generic [ref=e86]: 经济 · 收进来 1 天
+        - link "毛泽东崇拜再临：当代中国社会的成功学大师和“平等之神” 文化 · 今天收的" [ref=e87] [cursor=pointer]:
+          - /url: "#/c/9"
+          - generic [ref=e88]: 毛泽东崇拜再临：当代中国社会的成功学大师和“平等之神”
+          - generic [ref=e89]: 文化 · 今天收的
+      - generic [ref=e92]:
+        - textbox "贴一条链接，或写下一段话。Ctrl+Enter 收下。" [ref=e93]
+        - generic [ref=e94]:
+          - textbox "标签，逗号分隔（可留空）" [ref=e95]
+          - generic [ref=e96] [cursor=pointer]:
+            - text: 导入文件
+            - button "导入文件" [ref=e97]
+          - generic [ref=e98] [cursor=pointer]:
+            - checkbox "收下后 AI 看一眼" [checked] [ref=e99]
+            - text: 收下后 AI 看一眼
+          - button "收下" [ref=e100] [cursor=pointer]
+        - generic [ref=e101]:
+          - generic [ref=e102]: 存入
+          - generic [ref=e103] [cursor=pointer]: 未分类
+          - generic [ref=e104] [cursor=pointer]: 政治
+          - generic [ref=e105] [cursor=pointer]: 经济
+          - generic [ref=e106] [cursor=pointer]: 文化
+          - generic [ref=e107] [cursor=pointer]: 社会
+          - generic [ref=e108] [cursor=pointer]: ▣ 原始资料
+          - generic [ref=e109]: 材料级
+          - generic [ref=e110]:
+            - generic "还没判：AI 仍会引用，只是标明未定" [ref=e111] [cursor=pointer]: 未定
+            - generic "法规、公报、报告、论文：可以当依据" [ref=e112] [cursor=pointer]: 权威
+            - generic "深度报道、专业分析：可引用，算分析" [ref=e113] [cursor=pointer]: 参考
+            - generic "每日新闻、快讯、推送：只作时效背景" [ref=e114] [cursor=pointer]: 资讯
+          - generic [ref=e115]: 信源
+          - combobox "信源分级" [ref=e116]:
+            - option "未分级" [selected]
+            - option "T0 一手数据"
+            - option "T1 机构共识"
+            - option "T2 专业分析"
+            - option "T3 自媒体观点"
+            - option "T4 传闻未证"
+        - status [ref=e117]
+      - generic [ref=e118]:
+        - searchbox "搜标题、正文、摘要、标签…" [ref=e119]
+        - combobox "信源分级" [ref=e120]:
+          - option "全部信源" [selected]
+          - option "未分级"
+          - option "T0 一手数据"
+          - option "T1 机构共识"
+          - option "T2 专业分析"
+          - option "T3 自媒体观点"
+          - option "T4 传闻未证"
+      - generic [ref=e121]:
+        - generic [ref=e122]: 标签
+        - generic [ref=e123] [cursor=pointer]: 网页链接1
+        - generic [ref=e124] [cursor=pointer]: 无效内容1
+        - generic [ref=e125] [cursor=pointer]: 待核实1
+        - generic [ref=e126] [cursor=pointer]: 无法解析1
+        - generic [ref=e127] [cursor=pointer]: 链接剪藏1
+        - generic [ref=e128] [cursor=pointer]: 信息缺失1
+        - generic [ref=e129] [cursor=pointer]: 青年就业1
+        - generic [ref=e130] [cursor=pointer]: AI与就业1
+        - generic [ref=e131] [cursor=pointer]: 中国经济1
+        - generic [ref=e132] [cursor=pointer]: 失业率1
+        - generic [ref=e133] [cursor=pointer]: 灵活就业1
+        - generic [ref=e134] [cursor=pointer]: 人口老龄化1
+        - generic [ref=e135] [cursor=pointer]: 养老金分配1
+        - generic [ref=e136] [cursor=pointer]: 东亚比较1
+        - generic [ref=e137] [cursor=pointer]: 政府债务1
+        - generic [ref=e138] [cursor=pointer]: 长照体系1
+        - generic [ref=e139] [cursor=pointer]: 李厚辰1
+        - generic [ref=e140] [cursor=pointer]: 全面从严治党1
+        - generic [ref=e141] [cursor=pointer]: 党的建设1
+        - generic [ref=e142] [cursor=pointer]: 中央全会决定1
+        - generic [ref=e143] [cursor=pointer]: 民主集中制1
+        - generic [ref=e144] [cursor=pointer]: 正风肃纪1
+        - generic [ref=e145] [cursor=pointer]: 政治哲学1
+        - generic [ref=e146] [cursor=pointer]: 承认理论1
+        - generic [ref=e147] [cursor=pointer]: 福山1
+        - generic [ref=e148] [cursor=pointer]: 历史终结论1
+        - generic [ref=e149] [cursor=pointer]: 美国经济1
+        - generic [ref=e150] [cursor=pointer]: 家庭净资产1
+        - generic [ref=e151] [cursor=pointer]: 党派认知偏差1
+        - generic [ref=e152] [cursor=pointer]: 社交媒体算法1
+        - generic [ref=e153] [cursor=pointer]: 住房负担1
+        - generic [ref=e154] [cursor=pointer]: 毛泽东崇拜1
+        - generic [ref=e155] [cursor=pointer]: 毛选热1
+        - generic [ref=e156] [cursor=pointer]: 网络文化1
+        - generic [ref=e157] [cursor=pointer]: 历史记忆1
+        - generic [ref=e158] [cursor=pointer]: 平台传播1
+      - generic [ref=e160]:
+        - generic [ref=e161]: 共 8 条 · 第 1/1 页
+        - generic [ref=e162]:
+          - generic [ref=e163] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e164]
+            - link "毛泽东崇拜再临：当代中国社会的成功学大师和“平等之神”" [ref=e166]:
+              - /url: "#/c/9"
+            - generic [ref=e167]:
+              - generic [ref=e168]: 文化
+              - generic "还没判：AI 会引用，但会标明未定" [ref=e169]: 未定
+              - generic [ref=e170]: www.wainao.me
+              - generic [ref=e171]: ·
+              - generic [ref=e172]: 11-02 20:27
+            - generic [ref=e173]: 只覆盖开头约1600字：文章描述毛泽东相关形象与《毛选》在B站、微信读书、豆瓣、小红书等平台再度走热，并对比千禧年左右《毛选》被当作过时空泛作品的情形；随后指出1981年决议后崇拜走入低潮，如今再现令人费解，并批评网络崇拜多依赖影视剧虚构片段、对历史语境缺乏了解。
+            - generic [ref=e174]:
+              - generic "看同标签的条目" [ref=e175]: 毛泽东崇拜
+              - generic "看同标签的条目" [ref=e176]: 毛选热
+              - generic "看同标签的条目" [ref=e177]: 网络文化
+              - generic "看同标签的条目" [ref=e178]: 历史记忆
+            - generic [ref=e179]: 打开
+          - generic [ref=e181] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e182]
+            - link "America is doing better than you think. Your algorithm is just hiding it." [ref=e184]:
+              - /url: "#/c/8"
+            - generic [ref=e185]:
+              - generic [ref=e186]: 经济
+              - generic "还没判：AI 会引用，但会标明未定" [ref=e187]: 未定
+              - generic [ref=e188]: www.marketwatch.com
+              - generic [ref=e189]: ·
+              - generic [ref=e190]: 11-02 19:44
+            - generic [ref=e191]: 文章引用美联储数据称，美国底层50%家庭净资产从2019年底的1.86万亿美元增至2026年二季度的4.28万亿美元（名义增129%，经CPI调整实际增约78%），并列举家庭净资产中位数、应急储蓄、代际收入等改善迹象；同时承认住房负担仍差，认为党派认知偏差与算法放大愤怒导致公众低估经济现状。
+            - generic [ref=e192]:
+              - generic "看同标签的条目" [ref=e193]: 美国经济
+              - generic "看同标签的条目" [ref=e194]: 家庭净资产
+              - generic "看同标签的条目" [ref=e195]: 党派认知偏差
+              - generic "看同标签的条目" [ref=e196]: 社交媒体算法
+            - generic [ref=e197]: 打开
+          - generic [ref=e199] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e200]
+            - link "人民锐评：“养老金要崩盘”？用“三本账”穿越认知迷雾--观点--人民网" [ref=e202]:
+              - /url: "#/c/7"
+            - generic [ref=e203]:
+              - generic [ref=e204]: 经济
+              - generic "每日新闻、快讯、推送：只作时效背景" [ref=e205]: 资讯
+              - generic [ref=e206]: opinion.people.com.cn
+              - generic [ref=e207]: ·
+              - generic [ref=e208]: 11-02 17:01
+            - generic [ref=e209]: 打开
+          - generic [ref=e211] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e212]
+            - link "提问：福山为什么说“人之所以为人，并不在于欲望的满足，而在于被他人承认的渴望。整个历史进程的动力，就埋在这个渴望里。”，" [ref=e214]:
+              - /url: "#/c/6"
+            - generic [ref=e215]:
+              - generic [ref=e216]: 政治
+              - generic "深度报道、专业分析：可引用，算分析" [ref=e217]: 参考
+              - generic "专业分析" [ref=e218]: T2
+              - generic [ref=e219]: 手记
+              - generic [ref=e220]: ·
+              - generic [ref=e221]: 11-02 10:19
+            - generic [ref=e222]: 梳理福山“被承认的渴望驱动历史”一说的来源与论证，指出其承接柏拉图、黑格尔、科耶夫，以人类学、辩证法、解释力竞争等重构而非证明，并分析目的论等裂缝。
+            - generic [ref=e223]:
+              - generic "看同标签的条目" [ref=e224]: 政治哲学
+              - generic "看同标签的条目" [ref=e225]: 承认理论
+              - generic "看同标签的条目" [ref=e226]: 福山
+              - generic "看同标签的条目" [ref=e227]: 历史终结论
+            - generic [ref=e228]:
+              - generic [ref=e229]: 随手记 1
+              - generic [ref=e230]: 打开
+          - generic [ref=e231] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e232]
+            - link "中共中央关于持之以恒推进全面从严治党若干重大问题的决定" [ref=e234]:
+              - /url: "#/c/5"
+            - generic [ref=e235]:
+              - generic [ref=e236]: 政治
+              - generic "法规、公报、报告、论文：可以当依据" [ref=e237]: 权威
+              - generic "一手数据" [ref=e238]: T0
+              - generic [ref=e239]: www.gov.cn
+              - generic [ref=e240]: ·
+              - generic [ref=e241]: 11-01 19:16
+            - generic [ref=e242]: 文本为中共中央关于持之以恒推进全面从严治党的决定（2026年10月29日二十届五中全会通过），总结新时代全面从严治党成就与经验，分析国际国内党内新情况新问题，提出指导思想与七条原则，并部署增强党性、贯彻民主集中制、锻造高素质干部队伍、建设严密组织体系、正风肃纪、一体推进不敢腐不能腐不想腐等任务（原文在第七部分处中断）。
+            - generic [ref=e243]:
+              - generic "看同标签的条目" [ref=e244]: 全面从严治党
+              - generic "看同标签的条目" [ref=e245]: 党的建设
+              - generic "看同标签的条目" [ref=e246]: 中央全会决定
+              - generic "看同标签的条目" [ref=e247]: 民主集中制
+            - generic [ref=e248]: 打开
+          - generic [ref=e250] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e251]
+            - link "人口老龄化" [ref=e253]:
+              - /url: "#/c/4"
+            - generic [ref=e254]:
+              - generic [ref=e255]: 经济
+              - generic "深度报道、专业分析：可引用，算分析" [ref=e256]: 参考
+              - generic "自媒体观点" [ref=e257]: T3
+              - generic [ref=e258]: 文件
+              - generic [ref=e259]: ·
+              - generic [ref=e260]: 11-01 17:45
+            - generic [ref=e261]: 材料整理FearNation一期关于中国老龄化与东亚四经济体比较的评论：2025年末65岁以上人口首超0—14岁，2027年1962年出生者满65岁将带来数量级跳变；作者按财富、养老金、债务赤字、路径四维对照日本、韩国、中国台湾与中国大陆，并讨论双轨制转移至职业年金及退休金分配失衡。
+            - generic [ref=e262]:
+              - generic "看同标签的条目" [ref=e263]: 人口老龄化
+              - generic "看同标签的条目" [ref=e264]: 养老金分配
+              - generic "看同标签的条目" [ref=e265]: 东亚比较
+              - generic "看同标签的条目" [ref=e266]: 政府债务
+            - generic [ref=e267]: 打开
+          - generic [ref=e269] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e270]
+            - link "中国经济走弱正催生“失落的一代” - WSJ" [ref=e272]:
+              - /url: "#/c/3"
+            - generic [ref=e273]:
+              - generic [ref=e274]: 经济
+              - generic "深度报道、专业分析：可引用，算分析" [ref=e275]: 参考
+              - generic "专业分析" [ref=e276]: T2
+              - generic [ref=e277]: 文件
+              - generic [ref=e278]: ·
+              - generic [ref=e279]: 11-01 04:14
+            - generic [ref=e280]: 文章通过多名中国年轻人的个案，描述经济走弱、就业市场萎缩与AI普及叠加下，年轻人难觅稳定工作、推迟结婚生子、部分退出竞争的现象，并引用多组失业率、岗位缺口和灵活就业数据说明结构性压力。
+            - generic [ref=e281]:
+              - generic "看同标签的条目" [ref=e282]: 青年就业
+              - generic "看同标签的条目" [ref=e283]: AI与就业
+              - generic "看同标签的条目" [ref=e284]: 中国经济
+              - generic "看同标签的条目" [ref=e285]: 失业率
+            - generic [ref=e286]: 打开
+          - generic [ref=e288] [cursor=pointer]:
+            - generic "选中，批量定级 / 挪板块" [ref=e289]
+            - link "姆巴佩" [ref=e291]:
+              - /url: "#/c/1"
+            - generic [ref=e292]:
+              - generic "每日新闻、快讯、推送：只作时效背景" [ref=e293]: 资讯
+              - generic [ref=e294]: pages.quark.cn
+              - generic [ref=e295]: ·
+              - generic [ref=e296]: 11-01 00:21
+            - generic [ref=e297]: 法国足协主席迪亚洛10月29日就姆巴佩相关言论风波表态，称姆巴佩已公开致歉、那番话并非本意，各方应到此为止，并担忧事态失控可能损害法国足协与中国合作方的商业关系。此前皇马和西甲联盟已致歉，西甲主席特巴斯还专程会晤中国驻西班牙大使寻求解决。来源为极目新闻的报道。
+            - generic [ref=e298]:
+              - generic "看同标签的条目" [ref=e299]: 网页链接
+              - generic "看同标签的条目" [ref=e300]: 无效内容
+              - generic "看同标签的条目" [ref=e301]: 待核实
+              - generic "看同标签的条目" [ref=e302]: 无法解析
+            - generic [ref=e303]: 打开
+  - dialog "快速跳转" [ref=e306]:
+    - textbox "跳到某个页面、板块，或搜一条收存…" [active] [ref=e307]
+    - generic [ref=e308]:
+      - generic [ref=e309]: 跳转
+      - generic [ref=e310] [cursor=pointer]: 收存 · 全部
+      - generic [ref=e312] [cursor=pointer]: 未分类
+      - generic [ref=e314] [cursor=pointer]: 问
+      - generic [ref=e316] [cursor=pointer]: 检索
+      - generic [ref=e318] [cursor=pointer]: 判断
+      - generic [ref=e320] [cursor=pointer]: 洞察
+      - generic [ref=e322] [cursor=pointer]: 回顾
+      - generic [ref=e324] [cursor=pointer]: 设置
+      - generic [ref=e326] [cursor=pointer]:
+        - generic [ref=e327]: 切换到深色
+        - generic [ref=e328]: 主题
+      - generic [ref=e329] [cursor=pointer]:
+        - generic [ref=e330]: 政治
+        - generic [ref=e331]: 板块
+      - generic [ref=e332] [cursor=pointer]:
+        - generic [ref=e333]: 经济
+        - generic [ref=e334]: 板块
+      - generic [ref=e335] [cursor=pointer]:
+        - generic [ref=e336]: 文化
+        - generic [ref=e337]: 板块
+      - generic [ref=e338] [cursor=pointer]:
+        - generic [ref=e339]: 社会
+        - generic [ref=e340]: 板块
+      - generic [ref=e341] [cursor=pointer]:
+        - generic [ref=e342]: 原始资料
+        - generic [ref=e343]: 资料库
+    - generic [ref=e344]:
+      - generic [ref=e345]: ↑↓
+      - text: 选
+      - generic [ref=e346]: Enter
+      - text: 去
+      - generic [ref=e347]: Esc
+      - text: 关

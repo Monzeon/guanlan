@@ -1,0 +1,104 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e10]:
+      - generic [ref=e11]: 观澜
+      - generic [ref=e12]: 观水有术，必观其澜 ——《孟子》
+    - navigation [ref=e13]:
+      - generic [ref=e14]:
+        - button "收存" [ref=e15] [cursor=pointer]
+        - button "阅读中心 0" [ref=e510] [cursor=pointer]:
+          - generic [ref=e22]: 阅读中心
+          - generic [ref=e23]: "0"
+      - generic [ref=e511]:
+        - generic [ref=e512]: 阵地
+        - link "书架总览 0" [ref=e513] [cursor=pointer]:
+          - /url: "#/reading"
+          - generic [ref=e514]: 书架总览
+          - generic [ref=e515]: "0"
+        - link "全部资料" [ref=e516] [cursor=pointer]:
+          - /url: "#/reading/shelf/all"
+        - link "未分类" [ref=e518] [cursor=pointer]:
+          - /url: "#/reading/shelf/none"
+        - link "＋ 新建书架" [ref=e520] [cursor=pointer]:
+          - /url: "#/reading"
+        - generic [ref=e522]: 沉淀
+        - link "笔记 0" [ref=e523] [cursor=pointer]:
+          - /url: "#/reading/notes"
+          - generic [ref=e524]: 笔记
+          - generic [ref=e525]: "0"
+        - link "全文检索" [ref=e526] [cursor=pointer]:
+          - /url: "#/reading/search"
+        - link "知识库归档" [ref=e528] [cursor=pointer]:
+          - /url: "#/reading/archive"
+        - link "阅读统计" [ref=e530] [cursor=pointer]:
+          - /url: "#/reading/stats"
+        - generic [ref=e532]: 回到
+        - link "收存 / 知识卡" [ref=e533] [cursor=pointer]:
+          - /url: "#/"
+    - generic [ref=e76]:
+      - generic [ref=e77]: AI deepseek-v4.1-flash
+      - generic [ref=e78]: 库 16 条
+      - generic [ref=e79]:
+        - button "Ctrl K 快速跳转" [ref=e80] [cursor=pointer]:
+          - generic [ref=e81]: Ctrl
+          - generic [ref=e82]: K
+          - generic [ref=e83]: 快速跳转
+        - button "深色" [ref=e84] [cursor=pointer]
+  - main [ref=e85]:
+    - generic [ref=e535]:
+      - generic [ref=e536]:
+        - generic [ref=e537]:
+          - generic [ref=e538]: 阅读中心 · 我的主要阅读阵地
+          - heading "全部资料" [level=1] [ref=e539]
+          - paragraph [ref=e540]: 导入 → 分类 → 阅读 → 批注 → 检索 → 笔记 → 归档，一处到底
+        - generic [ref=e541]:
+          - button "＋ 书架" [ref=e542] [cursor=pointer]
+          - button "导入资料" [ref=e543] [cursor=pointer]
+      - generic [ref=e546]:
+        - generic [ref=e547]:
+          - strong [ref=e548]: "0"
+          - generic [ref=e549]: 资料
+        - generic [ref=e550]:
+          - strong [ref=e551]: "0"
+          - generic [ref=e552]: 在读
+        - generic [ref=e553]:
+          - strong [ref=e554]: "0"
+          - generic [ref=e555]: 读完
+        - generic [ref=e556]:
+          - strong [ref=e557]: "0"
+          - generic [ref=e558]: 高亮批注
+        - generic [ref=e559]:
+          - strong [ref=e560]: "0"
+          - generic [ref=e561]: 笔记
+        - generic [ref=e562]:
+          - strong [ref=e563]: "0"
+          - generic [ref=e564]: 双向关联
+        - generic [ref=e565]:
+          - strong [ref=e566]: 0 秒
+          - generic [ref=e567]: 阅读时长
+      - generic [ref=e568]:
+        - generic [ref=e569]:
+          - link "全部 0" [ref=e570] [cursor=pointer]:
+            - /url: "#/reading"
+          - link "未分类" [ref=e571] [cursor=pointer]:
+            - /url: "#/reading/shelf/none"
+        - generic [ref=e572]:
+          - generic [ref=e573]:
+            - button "全部类型" [ref=e574] [cursor=pointer]
+            - button "书籍" [ref=e575] [cursor=pointer]
+            - button "文档" [ref=e576] [cursor=pointer]
+            - button "音频" [ref=e577] [cursor=pointer]
+            - button "视频" [ref=e578] [cursor=pointer]
+            - button "网页" [ref=e579] [cursor=pointer]
+            - button "文字" [ref=e580] [cursor=pointer]
+          - generic [ref=e581]:
+            - button "全部状态" [ref=e582] [cursor=pointer]
+            - button "未读" [ref=e583] [cursor=pointer]
+            - button "在读" [ref=e584] [cursor=pointer]
+            - button "读完" [ref=e585] [cursor=pointer]
+            - button "暂搁" [ref=e586] [cursor=pointer]
+        - searchbox [ref=e592]
+      - generic [ref=e594]:
+        - generic [ref=e595]: 书架还是空的
+        - generic [ref=e596]: 点右上「导入资料」，PDF / EPUB / 文档 / 音视频都能收进来；也可以从已有收存里挑。
+      - generic [ref=e597]: AI 伴读走 WorkBuddy 账号云端额度 · deepseek-v4.1-flash

@@ -2,9 +2,24 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>观澜 · 个人认知平台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f3ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="观澜">
+<meta name="format-detection" content="telephone=no">
+<title>观澜 · 收存</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-180.png">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/extra.css">
+<link rel="stylesheet" href="/mobile.css">
+<link rel="stylesheet" href="/reading.css">
+<link rel="stylesheet" href="/bible.css">
+<link rel="stylesheet" href="/theme-v2.css">
+<link rel="stylesheet" href="/event-topics.css">
+<link rel="stylesheet" href="/reading-ai.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e1a2e'/%3E%3Cpath d='M4 20c3-6 6-6 9 0s6 6 9 0 6-6 6 0' stroke='%23c9973b' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='9' r='2.6' fill='%23efcb84'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -26,34 +41,105 @@
     </div>
 
     <nav class="nav" id="nav">
-      <div class="nav-group">面板</div>
-      <div class="nav-item" data-route="overview"><span>总览</span></div>
+      <!-- 桌面端四个平级板块；切换的是整套侧栏，不是加一个菜单项。 -->
+      <div class="sect-switch" id="sect-switch">
+        <button class="sect-btn" data-sect="vault" type="button" title="收存 · 剪藏、板块与知识卡">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h9"/></svg>
+          <span>收存</span>
+        </button>
+        <button class="sect-btn" data-sect="reading" type="button" title="阅读中心 · 我的主要阅读阵地">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.2C10.2 4.9 7.7 4.4 4.5 4.6v13.1c3.2-.2 5.7.3 7.5 1.6 1.8-1.3 4.3-1.8 7.5-1.6V4.6c-3.2-.2-5.7.3-7.5 1.6z"/><path d="M12 6.2v13.1"/></svg>
+          <span class="sect-label-full">阅读中心</span><span class="sect-label-short">阅读</span><span class="sect-count" id="c-reading">—</span>
+        </button>
+        <button class="sect-btn" data-sect="bible" type="button" title="圣经阅读地 · 分卷分章读经、标注与灵修笔记">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.4v13.2M8.2 8.6H5.6A1.6 1.6 0 0 0 4 10.2v7.1a1.6 1.6 0 0 0 1.6 1.6h5.1M15.8 8.6h2.6a1.6 1.6 0 0 1 1.6 1.6v7.1a1.6 1.6 0 0 1-1.6 1.6h-5.1"/><path d="M12 5.4l-2-2M12 5.4l2-2"/></svg>
+          <span>圣经</span><span class="sect-count" id="c-bible">—</span>
+        </button>
+        <button class="sect-btn" data-sect="events" type="button" title="事件 · 资料归集、进展时间线与复盘">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v18M6 5h11l-2.5 4L17 13H6"/><path d="M9 18h8"/></svg>
+          <span>事件</span><span class="sect-count" id="c-events">—</span>
+        </button>
+      </div>
 
-      <div class="nav-group">知识</div>
-      <div class="nav-item" data-route="clips">
-        <span>集藏</span><span class="count" id="c-clips">—</span></div>
-      <div class="nav-item" data-route="canon">
-        <span>正典</span><span class="count" id="c-canon">—</span></div>
-      <div class="nav-item" data-route="conflicts">
-        <span>矛盾</span><span class="count" id="c-conf">—</span></div>
+      <div id="nav-vault">
+        <div class="nav-item" data-route=""><span>全部</span><span class="count" id="c-clips">—</span></div>
 
-      <div class="nav-group">数据</div>
-      <div class="nav-item" data-route="series"><span>时序</span></div>
-      <div class="nav-item" data-route="library"><span>口径 · 基准 · 来源</span></div>
-      <div class="nav-item" data-route="entry"><span>录入</span></div>
+        <div class="nav-group">工具</div>
+        <div class="nav-item" data-route="ask"><span>问</span></div>
+        <div class="nav-item" data-route="insight"><span>洞察</span></div>
+        <div class="nav-item" data-route="search"><span>检索</span></div>
+        <div class="nav-item" data-route="verdicts"><span>判断</span></div>
+        <div class="nav-item" data-route="review"><span>回顾</span></div>
+        <div class="nav-item" data-route="more"><span>设置</span></div>
 
-      <div class="nav-group">判断</div>
-      <div class="nav-item" data-route="predictions">
-        <span>预测</span><span class="count" id="c-pred">—</span></div>
-      <div class="nav-item" data-route="decisions"><span>决策</span></div>
+        <div id="board-list"></div>
+        <div class="nav-item nav-add" id="board-add"><span>＋ 新建板块</span></div>
+        <div class="board-new" id="board-new">
+          <input type="text" id="board-new-input" maxlength="20" placeholder="板块名，回车创建">
+          <label class="board-new-kind" title="资料库用来放原件、原始数据和权威原文">
+            <input type="checkbox" id="board-new-archive"><span>建成资料库</span></label>
+        </div>
+      </div>
 
-      <div class="nav-group">智能</div>
-      <div class="nav-item" data-route="ai"><span>AI 三职能</span></div>
+      <div id="nav-events" hidden>
+        <div class="nav-group">事件专题</div>
+        <a class="nav-item" href="#/events"><span>事件总览</span><span class="count" id="c-event-topics">—</span></a>
+        <a class="nav-item" href="#/events"><span>跟踪与复盘</span></a>
+        <div class="ev-nav-note">关联已有资料，追加实际进展；<br>不复制、不移动原收存。</div>
+        <div class="nav-group">回到</div>
+        <a class="nav-item" href="#/"><span>收存 / 知识卡</span></a>
+        <a class="nav-item" href="#/reading"><span>阅读中心</span></a>
+      </div>
+
+      <div id="nav-reading" hidden>
+        <div class="nav-group">阵地</div>
+        <a class="nav-item" href="#/reading"><span>书架总览</span><span class="count" id="c-books">—</span></a>
+        <a class="nav-item" href="#/reading/shelf/all"><span>全部资料</span></a>
+        <a class="nav-item" href="#/reading/shelf/none"><span>未分类</span></a>
+        <div id="reading-shelves"></div>
+        <a class="nav-item" id="reading-shelf-add" data-nav-ignore="1" href="#/reading"><span>＋ 新建书架</span></a>
+
+        <div class="nav-group">沉淀</div>
+        <a class="nav-item" href="#/reading/notes"><span>笔记</span><span class="count" id="c-notes">—</span></a>
+        <a class="nav-item" href="#/reading/search"><span>全文检索</span></a>
+        <a class="nav-item" href="#/reading/archive"><span>知识库归档</span></a>
+        <a class="nav-item" href="#/reading/stats"><span>阅读统计</span></a>
+
+        <div class="nav-group">回到</div>
+        <a class="nav-item" href="#/"><span>收存 / 知识卡</span></a>
+      </div>
+
+      <div id="nav-bible" hidden>
+        <div class="nav-group">读经</div>
+        <a class="nav-item" data-route="bible" href="#/bible"><span>读经台</span><span class="count" id="c-bible-read">—</span></a>
+        <a class="nav-item" href="#/bible/search"><span>经文检索</span></a>
+        <a class="nav-item" href="#/bible/highlights"><span>我的划重点</span></a>
+        <a class="nav-item" href="#/bible/notes"><span>灵修笔记</span></a>
+        <a class="nav-item" href="#/bible/import"><span>导入经文</span></a>
+        <div class="nav-group">研读资源</div>
+        <a class="nav-item bl-nav-ext" href="https://bibleproject.com/zh-hans/" target="_blank"
+          rel="noreferrer" title="圣经工程 · BibleProject 中文站（新窗口打开）">
+          <span>圣经工程</span><span class="count">↗</span></a>
+        <a class="nav-item bl-nav-ext" href="https://www.biblicaltraining.org/" target="_blank"
+          rel="noreferrer" title="BiblicalTraining 免费神学课程（新窗口打开）">
+          <span>BiblicalTraining</span><span class="count">↗</span></a>
+        <div class="nav-group">书卷</div>
+        <div id="bl-nav-books"></div>
+        <div class="nav-group">回到</div>
+        <a class="nav-item" href="#/"><span>收存 / 知识卡</span></a>
+        <a class="nav-item" href="#/reading"><span>阅读中心</span></a>
+      </div>
     </nav>
 
     <div class="side-foot">
       <div><span class="k">AI</span> <span class="v" id="f-ai">检测中</span></div>
       <div><span class="k">库</span> <span class="v" id="f-db">—</span></div>
+      <div class="side-acts">
+        <button class="side-k" id="side-k" type="button" title="快速跳转 / 搜索（Ctrl+K）">
+          <span class="kbd">Ctrl</span><span class="kbd">K</span><span>快速跳转</span></button>
+        <button class="theme-toggle" id="theme-toggle" type="button"
+          title="切换深色 / 浅色">浅色</button>
+      </div>
     </div>
   </aside>
 
@@ -62,6 +148,40 @@
   </main>
 </div>
 
+<nav class="m-bar" id="m-bar" aria-label="主导航">
+  <a class="m-item" data-route="" href="#/">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h9"/></svg>
+    <span>收存</span></a>
+  <a class="m-item" data-route="reading" href="#/reading">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.2C10.2 4.9 7.7 4.4 4.5 4.6v13.1c3.2-.2 5.7.3 7.5 1.6 1.8-1.3 4.3-1.8 7.5-1.6V4.6c-3.2-.2-5.7.3-7.5 1.6z"/><path d="M12 6.2v13.1"/></svg>
+    <span>阅读</span></a>
+  <a class="m-item" data-route="bible" href="#/bible">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.4v13.2M5 7.2h4.2A2.8 2.8 0 0 1 12 10v9.2a2.4 2.4 0 0 0-2.4-2.4H5zM19 7.2h-4.2A2.8 2.8 0 0 0 12 10v9.2a2.4 2.4 0 0 1 2.4-2.4H19z"/></svg>
+    <span>圣经</span></a>
+  <a class="m-item" data-route="ask" href="#/ask">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.4c4.5 0 8.1 2.8 8.1 6.3s-3.6 6.3-8.1 6.3c-.85 0-1.67-.1-2.44-.3l-3.36 2.2.7-3.1C5 14.64 3.9 12.82 3.9 10.7c0-3.5 3.6-6.3 8.1-6.3z"/></svg>
+    <span>问</span></a>
+  <a class="m-item" data-route="insight" href="#/insight">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.6"/><circle cx="12" cy="12" r="2.6"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2"/></svg>
+    <span>洞察</span></a>
+  <a class="m-item" data-route="search" href="#/search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8L20 20"/></svg>
+    <span>检索</span></a>
+  <a class="m-item" data-route="verdicts" href="#/verdicts">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M8.4 12.2l2.4 2.4 4.8-4.9"/></svg>
+    <span>判断</span></a>
+  <a class="m-item" data-route="review" href="#/review">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.6v4.7l3 1.9"/></svg>
+    <span>回顾</span></a>
+  <a class="m-item" data-route="more" href="#/more">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.4h16M4 15.6h16"/><circle cx="9" cy="8.4" r="2.1" fill="#fffefb"/><circle cx="15" cy="15.6" r="2.1" fill="#fffefb"/></svg>
+    <span>设置</span></a>
+</nav>
+
 <script src="/app.js"></script>
+<script src="/reading.js"></script>
+<script src="/bible.js"></script>
+<script src="/event-topics.js"></script>
+
 </body>
 </html>

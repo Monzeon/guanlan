@@ -1,0 +1,300 @@
+/* ═══════════════════════════════════════════════════════════════
+   观澜 · v2「案头」皮肤层（skin overlay）
+   ─────────────────────────────────────────────────────────────
+   性质：只加不改的覆盖层。不改任何现有 CSS 文件、类名、DOM、JS。
+   回滚：删掉 index.html 里 <link rel="stylesheet" href="/theme-v2.css"> 即恢复原样。
+   依据：docs/UI-重设计方案-v2-案头.md
+
+   特异性策略（关键）：
+   - §1 令牌：原生 :root / [data-theme] 重定义（同特异性、后加载者胜）。
+   - §2-§6 系统性排版（字号阶梯/间距/圆角/动效/边框）：用非 :where() 的
+     原生规则，让 v2 版式真正生效（v2 是"换血"而非"补丁"）。仅涉及
+     纯视觉属性，不触碰布局逻辑、显示状态、交互结构。
+   - §7-§9 交互 hover / 组件微调：:where() 包裹（特异性 0），
+     只补旧规则没有的属性，天然安全。
+   - §10 覆盖区：特异性不足时集中在此用 !important，逐条注明原因。
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── §1 Design Tokens ─────────────────────────────────────── */
+:root {
+  /* 纸 / 面 / 凹 / 线：拉开明度阶梯 */
+  --bg:        #f6f4ef;
+  --panel:     #fffdf8;
+  --panel-2:   #faf7f1;
+  --sunken:    #edeae1;
+  --line:      #e6e2d7;
+  --line-2:    #d4cfc1;
+
+  /* 墨阶：主文字更沉 */
+  --text:      #191c21;
+  --dim:       #545b67;
+  --faint:     #6b7078;
+
+  /* 强调色：从"橙"回到"铜"，更深更灰 */
+  --accent:    #a06a28;
+  --accent-hi: #b07e3a;
+  --accent-soft: rgba(160, 106, 40, .08);
+
+  /* 材料级五色：统一降一档饱和，色相不动 */
+  --t0: #34547f;  --t0-bg: #eef2f8;  --t0-line: #cfdaeb;
+  --t1: #20706a;  --t1-bg: #ecf5f3;  --t1-line: #c4e0dc;
+  --t2: #a06a28;  --t2-bg: #f8f1e4;  --t2-line: #e8d6b4;
+  --t3: #a34a3a;  --t3-bg: #f9efec;  --t3-line: #ecd0c9;
+  --t4: #6d7480;  --t4-bg: #f2f3f5;  --t4-line: #dcdfe4;
+
+  --chart-line: #a06a28;
+  --chart-grid: #eae6db;
+
+  /* 层次 = 纸/面/凹三档 + 发丝线；阴影只留给浮层 */
+  --shadow:    0 0 0 0 transparent;
+  --shadow-hi: 0 12px 32px -16px rgba(20, 22, 26, .28);
+
+  /* 动效：统一曲线，去回弹 */
+  --t-fast: 120ms;  --t-med: 200ms;  --t-slow: 280ms;
+  --ease-out: cubic-bezier(.2, .7, .3, 1);
+  --ease-expo: cubic-bezier(.2, .7, .3, 1);
+  --ease-spring: cubic-bezier(.2, .7, .3, 1);  /* 原名保留，值改直 */
+}
+
+/* 夜读：三档明度 + 发丝线 */
+[data-theme="dark"] {
+  --bg:        #0e1013;
+  --panel:     #16191e;
+  --panel-2:   #191d23;
+  --sunken:    #0a0c0f;
+  --line:      #242a32;
+  --line-2:    #333b45;
+
+  --text:      #e6e2d8;
+  --dim:       #a3a9b2;
+  --faint:     #858b95;
+
+  --accent:    #c9a063;
+  --accent-hi: #dcb77c;
+  --accent-soft: rgba(201, 160, 99, .10);
+
+  --t0: #7fb2e8;  --t0-bg: #16202e;  --t0-line: #2c4258;
+  --t1: #6fbfb2;  --t1-bg: #14231f;  --t1-line: #2e4a42;
+  --t2: #d9b878;  --t2-bg: #241f14;  --t2-line: #4d4128;
+  --t3: #d98a80;  --t3-bg: #271715;  --t3-line: #4d2f2c;
+  --t4: #8b92a0;  --t4-bg: #1c1f26;  --t4-line: #333842;
+
+  --chart-line: #c9a063;
+  --chart-grid: #1c222b;
+
+  --shadow: 0 0 0 0 transparent;
+  --shadow-hi: 0 12px 32px -14px rgba(0, 0, 0, .55);
+}
+
+/* ───────────────────────────────────────────────
+   §2 字体节奏（提案 §3.2：等宽不碰中文）
+   仅视觉排版属性：font-family / font-size / letter-spacing。
+   ─────────────────────────────────────────────── */
+
+/* 中文元信息回到黑体；等宽只负责 ID/时间/纯数字 */
+.head .meta, .claim-meta, .cc-meta, .research-head .faint,
+.br-meta, .list-meta, .pal-group, .nav-group, .panel-sub,
+.board-acts, .g-label, .side-foot {
+  font-family: var(--sans);
+  letter-spacing: .02em;
+}
+.head .meta, .list-meta, .pal-group, .nav-group,
+.research-head .faint, .panel-sub, .side-foot, .cc-meta, .claim-meta {
+  font-variant-numeric: tabular-nums;
+}
+/* 可读性下限 11px */
+.nav-group, .pal-group, .chip-n, .cc-note, .reader-kicker,
+.sect-count, .g-label, .tier-label, .grade-label {
+  font-size: 11px;
+  letter-spacing: .12em;
+}
+.nav-item .count, .badge, .chip-n, .cc-note { font-size: 11px; }
+.brand-sub { font-size: 11px; }
+.brand-sub .bs-src { font-size: 10px; }
+
+/* ───────────────────────────────────────────────
+   §3 间距与版式（提案 §3.3：8pt 基准，页面 32/48）
+   仅 padding/margin/gap 视觉节奏，不改布局结构。
+   ─────────────────────────────────────────────── */
+
+.main { padding: 32px 48px 110px; }
+@media (max-width: 1100px) { .main { padding: 28px 32px 100px; } }
+
+/* 页头留白 + 更浅的分隔线（提案 §6-10） */
+.head { padding-bottom: 18px; margin-bottom: 26px;
+        border-bottom-color: color-mix(in srgb, var(--line) 72%, transparent); }
+.head h1 { font-size: 24px; letter-spacing: .015em; }  /* H1 24/34 */
+
+/* 面板/卡片圆角统一 10，边线更轻（提案 §3.4） */
+.panel, .stat, .clip-card, .research-card, .draft-card,
+.reader-panel, .gl-modal, .pal { border-radius: 10px; }
+.panel, .stat, .clip-card, .research-card { border-color: var(--line); }
+.stat { padding: 14px 16px; }
+.stat .n { font-size: 22px; }
+
+/* ───────────────────────────────────────────────
+   §4 动效克制度（提案 §3.5：去 hover 位移、去回弹）
+   仅 transition/animation 视觉曲线。
+   ─────────────────────────────────────────────── */
+.stat, .clip-card, .research-card {
+  transition: border-color var(--t-med) var(--ease-out),
+              box-shadow var(--t-med) var(--ease-out),
+              background var(--t-med) var(--ease-out);
+}
+.stat:hover, .clip-card:hover, .research-card:hover, .fab:hover {
+  transform: none;
+}
+.stat:hover, .clip-card:hover, .research-card:hover {
+  background: var(--panel-2);
+  border-color: var(--line-2);
+}
+.view-enter { animation-duration: var(--t-slow); }
+.stagger > * { animation-delay: calc(var(--i, 0) * 18ms); }
+
+/* 阅读器顶部去渐变，纯纸面 */
+.reader-top { background: var(--panel); }
+
+/* ───────────────────────────────────────────────
+   §5 强调色用量纪律（提案 §3.1：一屏铜 ≤3 处）
+   仅 color/background/border，不改功能或结构。
+   ─────────────────────────────────────────────── */
+
+/* 未选中的普通 chip（筛选/标签云）：回到墨阶，去琥珀边框通胀 */
+.chip { color: var(--dim); border-color: transparent; }
+.chip:hover { color: var(--text); border-color: var(--line-2); }
+.chip.on {
+  color: var(--accent); background: var(--accent-soft);
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: 0 1px 0 0 var(--accent);
+}
+
+/* 标签云 chip.mini：无边框更安静，hover 才显铜 */
+.chip.mini { color: var(--faint); background: transparent; border-color: transparent; }
+.chip.mini:hover { color: var(--accent); background: var(--accent-soft); }
+
+/* 材料级四段控件的选中态保留各自语义色（提案 §3.1：语义色仍用） */
+.g-seg.on { background: var(--accent-soft); color: var(--accent); }
+.g-seg.on.g-canon { background: var(--t0-bg); color: var(--t0); }
+.g-seg.on.g-ref   { background: var(--t1-bg); color: var(--t1); }
+.g-seg.on.g-daily { background: var(--t2-bg); color: var(--t2); }
+.g-seg.on.g-unset { background: var(--t4-bg); color: var(--t4); }
+
+/* 标签活跃态用铜字+软底 */
+.tag-active, .tag-chip:active { color: var(--accent); background: var(--accent-soft); }
+
+/* 按钮：hover 从提亮改为压暗（印刷逻辑） */
+.btn { transition: background var(--t-fast) var(--ease-out),
+                   border-color var(--t-fast) var(--ease-out); }
+.btn:hover { background: color-mix(in srgb, var(--accent) 88%, black); border-color: transparent; }
+.btn.ghost { color: var(--accent); border-color: var(--line-2); }
+.btn.ghost:hover { background: var(--accent-soft); border-color: transparent; }
+
+/* ───────────────────────────────────────────────
+   §6 壳层 / 侧栏（提案 §4.1 的 CSS-only 部分）
+   ─────────────────────────────────────────────── */
+.sect-switch { border-radius: 10px; border-color: var(--line); background: var(--sunken); }
+.sect-btn { border-radius: 7px; font-size: 11.5px; }
+.sect-btn svg { stroke-width: 1.6; }
+.sect-btn.on { box-shadow: none; background: var(--panel); }
+.nav-group { color: var(--faint); padding: 18px 10px 6px; font-weight: 500; }
+.nav-item:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.nav-item.active { background: var(--accent-soft); }
+
+/* ───────────────────────────────────────────────
+   §7 表单聚焦光圈（提案 §5）—— :where() 安全补充
+   ─────────────────────────────────────────────── */
+:where(input[type=text]:focus, input[type=search]:focus, input[type=number]:focus,
+       input[type=date]:focus, textarea:focus, select:focus,
+       .cap textarea:focus, .pal-input:focus, .title-input:focus, .tag-input:focus) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ───────────────────────────────────────────────
+   §8 浮层阴影归位（提案 §3.4：唯一允许的阴影）
+   ─────────────────────────────────────────────── */
+:where(.gl-modal, .pal, .gl-hover-tip) { box-shadow: var(--shadow-hi); }
+.gl-modal, .pal { border-radius: 14px; }  /* 浮层档 */
+
+/* 滚动条更细更隐 */
+:where(::-webkit-scrollbar) { width: 8px; height: 8px; }
+:where(::-webkit-scrollbar-thumb) { border-width: 2px; border-radius: 4px; }
+
+/* ───────────────────────────────────────────────
+   §9 覆盖区（特异性不足，逐条注明原因）
+   ─────────────────────────────────────────────── */
+
+/* 阅读中心/圣经沉浸视图吃掉主区 padding 的规则在原文件里带 body 前缀，
+   特异性更高；保留 immersi 布局不变，仅还原我 §3 对普通页面的留白 */
+body.rc-active .main, body.bl-active .main { padding: 0 !important; max-width: none !important; }
+
+/* 圣经板块底图：原规则带 [data-theme="dark"] 前缀特异性更高，
+   v2 将照片氛围整体压得更淡（0.20/0.32 → 0.10/0.16） */
+body.bl-active::before { opacity: .10 !important; }
+[data-theme="dark"] body.bl-active::before { opacity: .16 !important; filter: brightness(1.2) contrast(.95); }
+
+/* extra.css 的 .note-preview-modal 用直写阴影，接管道浮层统一阴影 */
+.note-preview-modal { box-shadow: var(--shadow-hi) !important; }
+
+/* ───────────────────────────────────────────────
+   §10 阅读中心 / 圣经专属微调（bl-*/rc-* 前缀不外溢）
+   ─────────────────────────────────────────────── */
+.bl-paper { font-size: 16.5px; line-height: 1.95; }
+.bl-verse-no, .bl-vno { font-size: 10.5px; }
+
+@media (min-width: 1280px) {
+  .rc-reader .reader-scroll .reader-body,
+  .rc-reader .reader-pane { max-width: 720px; }
+}
+
+/* ───────────────────────────────────────────────
+   §11 移动端（≤860 由 mobile.css 接管，这里只调密度）
+   ─────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .main { padding: 18px 16px 76px; }
+  .m-item span { font-size: 10.5px; }
+  .m-item svg { width: 18px; height: 18px; }
+}
+
+/* §12 reduced-motion 与旧文件保持一致，无需重复 */
+
+/* 筛选 chip 激活态：加粗 + 细铜下划线（让用户一眼看出当前筛选状态） */
+.chip.on {
+  font-weight: 600;
+  box-shadow: 0 1px 0 0 var(--accent);
+}
+
+
+
+/* ───────────────────────────────────────────────
+   §13 覆盖区：筛选 chip 激活态加粗 + 下划线（v2.1）
+   覆盖本文件里早前的 .chip.on 定义，确保选中态更醒目
+   ─────────────────────────────────────────────── */
+.chip.on {
+  font-weight: 600 !important;
+  box-shadow: 0 1px 0 0 var(--accent) !important;
+}
+
+
+/* ───────────────────────────────────────────────
+   §13 覆盖区：筛选 chip 激活态加粗 + 下划线（v2.1）
+   覆盖本文件里早前的 .chip.on 定义，确保选中态更醒目
+   ─────────────────────────────────────────────── */
+.chip.on {
+  font-weight: 600 !important;
+  box-shadow: 0 1px 0 0 var(--accent) !important;
+}
+
+/* 筛选 chip 激活态：加粗 + 细铜下划线（v2.1） */
+.chip.on {
+  font-weight: 600 !important;
+  box-shadow: 0 1px 0 0 var(--accent) !important;
+}
+
+/* 筛选 chip 激活态：加粗 + 细铜下划线（v2.1，覆盖） */
+.chip.on {
+  font-weight: 600 !important;
+  box-shadow: 0 1px 0 0 var(--accent) !important;
+}
+

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f3ee">
+<title>观澜 · 原件直读</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column;
+    background: #f5f3ee; color: #23211e;
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  .gl-bar {
+    flex: none; display: flex; align-items: center; gap: 14px;
+    padding: 9px 16px; background: rgba(255,255,255,.92);
+    border-bottom: 1px solid #e3ded4;
+  }
+  .gl-back {
+    flex: none; color: #0f766e; text-decoration: none; font-size: 12.5px;
+    white-space: nowrap;
+  }
+  .gl-back:hover { text-decoration: underline; }
+  .gl-name {
+    flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-size: 13px; font-weight: 600;
+  }
+  .gl-acts { flex: none; display: flex; gap: 8px; }
+  .gl-btn {
+    display: inline-block; padding: 5px 11px; border: 1px solid #d6d0c4;
+    border-radius: 7px; background: #fff; color: #3a3630;
+    font-size: 12px; text-decoration: none; white-space: nowrap;
+  }
+  .gl-btn:hover { border-color: #0f766e; color: #0f766e; }
+  .gl-status {
+    flex: none; padding: 7px 16px; font-size: 12px; color: #8a8175;
+    background: #faf8f4; border-bottom: 1px solid #eae5db;
+  }
+  .gl-status.err { color: #a3342b; background: #fff5f3; }
+  .gl-stage {
+    flex: 1 1 auto; min-height: 0; margin: 12px 16px 16px;
+    background: #fff; border: 1px solid #e3ded4; border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(30,28,24,.05); overflow: auto;
+  }
+  .gl-frame { display: block; width: 100%; height: 100%; min-height: 60vh; border: 0; background: #fff; }
+  .gl-fallback { padding: 24px 28px; }
+  @media (max-width: 620px) {
+    .gl-bar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+    .gl-name { flex-basis: 100%; order: 3; font-size: 12px; }
+    .gl-stage { margin: 8px; }
+  }
+</style>
+</head>
+<body>
+  <header class="gl-bar">
+    <a class="gl-back" id="gl-back" href="/">← 回观澜</a>
+    <div class="gl-name" id="gl-title">正在读取 HTML 原件…</div>
+    <div class="gl-acts">
+      <a class="gl-btn" id="gl-download" href="#" download>下载原件</a>
+    </div>
+  </header>
+  <div class="gl-status" id="gl-status">正在读取原件并整理版式…</div>
+  <main class="gl-stage" id="gl-stage"></main>
+  <script src="/html-reader.js"></script>
+</body>
+</html>
