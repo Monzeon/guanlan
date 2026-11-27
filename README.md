@@ -27,7 +27,7 @@
 
 打包版只发在 [Releases](https://github.com/Monzeon/guanlan/releases)：
 
-- `观澜-1.0.0-windows-x64.zip`：绿色版，解压到任意目录（不要在压缩包里直接双击），双击 `观澜.exe` 即可。数据落在同目录的 `data/`。
+- `guanlan-1.0.0-windows-x64.zip`：绿色版，解压到任意目录（不要在压缩包里直接双击），双击 `观澜.exe` 即可。数据落在同目录的 `data/`。
 - 需要 Windows 10/11 x64 与 WebView2 Runtime（Win11 自带；Win10 多数随 Edge 已装）。
 - 首次运行若被 SmartScreen 拦，点「更多信息 → 仍要运行」。
 
