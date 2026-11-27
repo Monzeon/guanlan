@@ -506,7 +506,7 @@ python server.py
 
 全面 review（`docs/audit-2026-11-11.md`）修完 13 个 bug 后，剩下的三件事这一轮做掉了：
 
-**回归门禁。** 46 条测试可用 `tools\run_tests.cmd` 一键跑完（0.3 秒，内存库 + 临时目录，不碰真实数据）。`.githooks\install.cmd` 装一次之后，每次 `git commit` 先跑全套，失败即挡下；`GL_SKIP_TESTS=1` 可绕过。`.github/workflows/tests.yml` 已备好，等仓库有了远端就生效。细节见 `docs/回归门禁.md`。
+**回归门禁。** 46 条测试可用 `tools\run_tests.cmd` 一键跑完（0.3 秒，内存库 + 临时目录，不碰真实数据）。`.githooks\install.cmd` 装一次之后，每次 `git commit` 先跑全套，失败即挡下；`GL_SKIP_TESTS=1` 可绕过。`.github/workflows/tests.yml` 推上 GitHub 后自动跑，只跑 Windows（项目依赖 Win32 / pywebview）。细节见 `docs/回归门禁.md`。
 
 **示例数据编号隔离。** 示例条目原来和真实条目共用编号空间（都是 `C-2026-0001`），结果示例占了 0001–0007，用户自己的第一条命题只能从 0008 起编，引用也可能指错。现在示例一律 `DEMO-C-0001` / `DEMO-Q-0001` / `DEMO-P-0001` / `DEMO-S-0001`，`next_code()` 不会再撞上它们；引用识别同时认这两种形状（`server.extract_citations`，有测试）。存量库用 `tools/migrate_demo_codes.py` 迁移：默认只试算，`--apply` 才改，改前用 sqlite backup 接口备份到 `backups/`，只改「编号 + 原句」双命中的行。本机库已于 2026-11-11 迁移，15 条编号、3 处引用，备份在 `backups/guanlan-pre-demo-codes-20261111-092616.db`。
 
